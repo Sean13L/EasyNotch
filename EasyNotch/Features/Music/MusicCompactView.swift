@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// What's playing, beside the closed notch: cover art on the left wing and a pulsing waveform
+/// What's playing, beside the closed notch: cover art on the left wing and bouncing audio bars
 /// in the player's color on the right one.
 struct MusicCompactView: View {
     enum Side {
@@ -19,10 +19,8 @@ struct MusicCompactView: View {
                 MusicArtwork(image: source.artwork, cornerRadius: 5)
                     .frame(width: 22, height: 22)
             case .trailing:
-                Image(systemName: "waveform")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(source.player.accentColor)
-                    .symbolEffect(.pulse, isActive: source.snapshot?.isPlaying == true)
+                AudioBars(isPlaying: source.snapshot?.isPlaying == true, color: source.player.accentColor)
+                    .frame(width: 22, height: 14)
             }
         }
     }

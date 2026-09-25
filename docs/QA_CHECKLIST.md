@@ -43,6 +43,8 @@ the README).
       trackpad.
 - [ ] While the **Size** pane is showing, the notch stays open and resizes live as you drag.
       Switching to another pane or another app lets it close.
+- [ ] At the smallest width and height (560 × 190), check the Music and Pomodoro tabs: nothing
+      overlaps or gets cut off.
 - [ ] **Restore Defaults…** asks for confirmation first, then resets everything.
 - [ ] Quit and relaunch: your settings are kept.
 - [ ] ⌘W closes the Settings window.
@@ -105,8 +107,9 @@ every rebuild.
       **Allow…** hint. No permission prompt appears on its own.
 - [ ] Press play in Spotify itself. Within about a second, the tab shows the title, artist,
       album, and a moving progress bar, still without any prompt.
-- [ ] The closed notch shows the music wings (a cover placeholder on the left, a pulsing
-      waveform on the right). Hovering them opens the Music tab.
+- [ ] The closed notch shows the music wings: a cover placeholder on the left, and bars on the
+      right that bounce independently while playing and settle smoothly when paused. Hovering
+      them opens the Music tab.
 
 ### Granting permission
 - [ ] Press **Allow…** (or any control button). macOS asks: "EasyNotch wants to control
@@ -116,6 +119,8 @@ every rebuild.
 - [ ] Settings → Music shows each player's status (Allowed / Not asked yet / Not allowed).
 
 ### Controls (for each player)
+- [ ] The play button sits exactly under the middle of the progress bar, with shuffle and repeat
+      on either side and volume at the top right.
 - [ ] Play/pause responds instantly and matches the app.
 - [ ] Next and previous change the track; the title and cover art update.
 - [ ] Dragging the progress bar seeks.

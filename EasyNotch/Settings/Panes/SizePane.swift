@@ -18,7 +18,7 @@ struct SizePane: View {
             } header: {
                 Text("Expanded notch")
             } footer: {
-                Text("The notch stays open while this pane is showing, so you can watch it change.")
+                Text("The notch stays open while this pane is showing, so you can watch it change. The smallest sizes still leave room for every tab.")
             }
 
             Section {

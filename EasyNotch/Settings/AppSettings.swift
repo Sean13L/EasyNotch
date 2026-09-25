@@ -13,9 +13,11 @@ extension NumericSetting {
     static let hoverDelay = NumericSetting(key: "notch.hoverDelay", defaultValue: 0.15, range: 0...1)
     static let closeDelay = NumericSetting(key: "notch.closeDelay", defaultValue: 0.15, range: 0...1.5)
     static let hotZoneMargin = NumericSetting(key: "notch.hotZoneMargin", defaultValue: 8, range: 0...30)
-    static let expandedWidth = NumericSetting(key: "notch.expandedWidth", defaultValue: 640, range: 400...900)
-    static let expandedHeight = NumericSetting(key: "notch.expandedHeight", defaultValue: 200, range: 120...400)
-    static let compactWingWidth = NumericSetting(key: "notch.compactWingWidth", defaultValue: 64, range: 40...120)
+    // The minimum sizes are the smallest at which every tab's layout still fits (the Music tab
+    // needs the most room). Smaller saved values are raised to these when loaded.
+    static let expandedWidth = NumericSetting(key: "notch.expandedWidth", defaultValue: 640, range: 560...900)
+    static let expandedHeight = NumericSetting(key: "notch.expandedHeight", defaultValue: 200, range: 190...400)
+    static let compactWingWidth = NumericSetting(key: "notch.compactWingWidth", defaultValue: 64, range: 48...120)
 
     // Pomodoro (lengths in minutes)
     static let focusMinutes = NumericSetting(key: "pomodoro.focusMinutes", defaultValue: 25, range: 1...120)

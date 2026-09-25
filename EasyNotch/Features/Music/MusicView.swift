@@ -27,13 +27,14 @@ private struct NowPlayingPanel: View {
             MusicArtwork(image: source.artwork)
                 .frame(width: 118, height: 118)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: 8) {
                 header
                 if let snapshot = source.snapshot {
                     Scrubber(source: source, snapshot: snapshot)
-                    Controls(source: source, snapshot: snapshot)
+                    TransportControls(source: source, snapshot: snapshot)
                 }
                 PermissionHint(source: source)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 28)
@@ -41,7 +42,7 @@ private struct NowPlayingPanel: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(source.snapshot?.title ?? "\(source.player.displayName) is open")
                     .font(.headline)
@@ -51,7 +52,10 @@ private struct NowPlayingPanel: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Spacer(minLength: 0)
+            Spacer(minLength: 8)
+            if let volume = source.snapshot?.volume {
+                VolumeSlider(source: source, volume: volume)
+            }
             ForEach(nowPlaying.alternatives, id: \.player) { other in
                 AppIconButton(source: other, help: "Switch to \(other.player.displayName)") {
                     nowPlaying.switchTo(other)
@@ -73,12 +77,14 @@ private struct NowPlayingPanel: View {
     }
 }
 
-/// Elapsed time, a draggable progress bar, and time remaining.
+/// Elapsed time, a draggable progress bar, and time remaining. Both time labels have the same
+/// width, so the bar's middle lines up with the centered controls below it.
 private struct Scrubber: View {
     let source: MediaPlayerSource
     let snapshot: PlayerSnapshot
 
     @State private var dragPosition: Double?
+    private let labelWidth: CGFloat = 44
 
     var body: some View {
         if let duration = snapshot.duration, duration > 0, snapshot.position != nil {
@@ -86,7 +92,7 @@ private struct Scrubber: View {
                 let elapsed = dragPosition ?? snapshot.elapsed(at: now) ?? 0
                 HStack(spacing: 8) {
                     Text(PlayerSnapshot.clock(elapsed))
-                        .frame(width: 40, alignment: .trailing)
+                        .frame(width: labelWidth, alignment: .trailing)
                     Slider(
                         value: Binding(get: { elapsed }, set: { dragPosition = $0 }),
                         in: 0...duration,
@@ -101,7 +107,7 @@ private struct Scrubber: View {
                     .controlSize(.mini)
                     .tint(.white)
                     Text("-" + PlayerSnapshot.clock(duration - elapsed))
-                        .frame(width: 44, alignment: .leading)
+                        .frame(width: labelWidth, alignment: .leading)
                 }
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -110,16 +116,17 @@ private struct Scrubber: View {
     }
 }
 
-private struct Controls: View {
+/// Shuffle · previous · play/pause · next · repeat, centered under the progress bar.
+private struct TransportControls: View {
     let source: MediaPlayerSource
     let snapshot: PlayerSnapshot
 
-    @State private var dragVolume: Double?
-
     var body: some View {
-        HStack(spacing: 14) {
-            if let shuffle = snapshot.shuffle {
-                ControlButton(systemImage: "shuffle", help: "Shuffle", isOn: shuffle) {
+        HStack(spacing: 18) {
+            // Shuffle and repeat keep their slots even when unavailable (before permission is
+            // granted), so the play button always sits exactly in the middle.
+            ToggleSlot(isAvailable: snapshot.shuffle != nil) {
+                ControlButton(systemImage: "shuffle", help: "Shuffle", isOn: snapshot.shuffle) {
                     send(.toggleShuffle)
                 }
             }
@@ -135,42 +142,61 @@ private struct Controls: View {
             .buttonStyle(.plain)
             .help(snapshot.isPlaying ? "Pause" : "Play")
             ControlButton(systemImage: "forward.fill", help: "Next") { send(.next) }
-            if let repeatMode = snapshot.repeatMode {
+            ToggleSlot(isAvailable: snapshot.repeatMode != nil) {
                 ControlButton(
-                    systemImage: repeatMode == .one ? "repeat.1" : "repeat",
+                    systemImage: snapshot.repeatMode == .one ? "repeat.1" : "repeat",
                     help: "Repeat",
-                    isOn: repeatMode != .off
+                    isOn: snapshot.repeatMode.map { $0 != .off }
                 ) { send(.cycleRepeat) }
             }
-
-            Spacer(minLength: 0)
-
-            if let volume = snapshot.volume {
-                HStack(spacing: 4) {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Slider(
-                        value: Binding(get: { dragVolume ?? volume }, set: { dragVolume = $0 }),
-                        in: 0...100,
-                        onEditingChanged: { isDragging in
-                            guard !isDragging, let target = dragVolume else { return }
-                            Task {
-                                await source.perform(.setVolume(target))
-                                dragVolume = nil
-                            }
-                        }
-                    )
-                    .controlSize(.mini)
-                    .tint(.white)
-                    .frame(width: 80)
-                }
-            }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func send(_ command: PlayerCommand) {
         Task { await source.perform(command) }
+    }
+}
+
+/// Shows its content, or keeps the same space empty.
+private struct ToggleSlot<Content: View>: View {
+    let isAvailable: Bool
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .opacity(isAvailable ? 1 : 0)
+            .disabled(!isAvailable)
+    }
+}
+
+private struct VolumeSlider: View {
+    let source: MediaPlayerSource
+    let volume: Double
+
+    @State private var dragVolume: Double?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "speaker.wave.2.fill")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Slider(
+                value: Binding(get: { dragVolume ?? volume }, set: { dragVolume = $0 }),
+                in: 0...100,
+                onEditingChanged: { isDragging in
+                    guard !isDragging, let target = dragVolume else { return }
+                    Task {
+                        await source.perform(.setVolume(target))
+                        dragVolume = nil
+                    }
+                }
+            )
+            .controlSize(.mini)
+            .tint(.white)
+            .frame(width: 64)
+        }
+        .help("Volume")
     }
 }
 
@@ -221,8 +247,8 @@ private struct PermissionHint: View {
         switch source.permission {
         case .notDetermined:
             HStack(spacing: 8) {
-                Text("Allow EasyNotch to control \(source.player.displayName) to use the buttons and see artwork.")
-                    .lineLimit(2)
+                Text("Allow control to use the buttons and see artwork.")
+                    .lineLimit(1)
                 Button("Allow…") { Task { await source.requestPermission() } }
                     .controlSize(.mini)
             }

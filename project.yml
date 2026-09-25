@@ -16,11 +16,11 @@ settings:
     # Code runs on the main actor unless marked otherwise (BLUEPRINT D8).
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
     SWIFT_APPROACHABLE_CONCURRENCY: "YES"
-    # "Sign to Run Locally" (ad-hoc). Switch to an Apple Development identity before Phase 3,
-    # otherwise macOS re-asks for Automation permission after every build.
+    # Signed with the owner's free Apple ID ("Personal Team"). A stable signature lets macOS
+    # remember permissions (like controlling Spotify) across rebuilds.
     CODE_SIGN_STYLE: Automatic
-    CODE_SIGN_IDENTITY: "-"
-    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: "Apple Development"
+    DEVELOPMENT_TEAM: Y4Q9CP9K8V
 
 targets:
   EasyNotch:

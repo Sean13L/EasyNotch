@@ -22,8 +22,8 @@ sentence or two, and prefer simple, readable code over clever code.
 - **Phase 3 (music): committed.** 65 tests pass. Real playback with Automation permission is
   still to be checked by the owner (`docs/QA_CHECKLIST.md` Phase 3).
 - **Next:** Phase 4, the file shelf and AirDrop.
-- **Signing:** ad-hoc for now (there's no Apple ID in Xcode yet). Switch to an Apple
-  Development identity before Phase 3.
+- **Signing:** Apple Development, owner's Personal Team `Y4Q9CP9K8V`. If a build ever says a
+  certificate or profile is missing, add `-allowProvisioningUpdates`.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
   §13 and D12.
 - Roadmap and acceptance criteria are in `docs/BLUEPRINT.md` §12. Update this section whenever a
@@ -74,7 +74,7 @@ Test runs write real timer state; clean up with
   Otherwise the event launches the player.
 - **App Sandbox is OFF, Hardened Runtime is ON.** Apple Events need the
   `com.apple.security.automation.apple-events` entitlement and `NSAppleEventsUsageDescription`.
-- **Sign with the Apple Development identity, not ad-hoc.** Automation permissions are tied to
+- **Keep the Apple Development signature (never ad-hoc).** Automation permissions are tied to
   the code signature. Reset them with `tccutil reset AppleEvents com.seanl.easynotch`.
 - **The panel ignores mouse events while closed** so menu-bar clicks pass through. Hover comes
   from global `NSEvent` mouse monitors, which need no permission. Keyboard monitors would need
@@ -99,6 +99,10 @@ Test runs write real timer state; clean up with
   which is nearly always.
 - **Features never reference each other.** Helpers shared between features go in `Shared/`
   (e.g. `SecondsTimeline`).
+- **Continuous decorative motion uses Core Animation layers, not SwiftUI.** See `AudioBars`:
+  the render server animates them at no app CPU cost.
+- **Minimum open size is 560×190 pt, set by the Music tab's layout.** If a tab's layout grows,
+  re-check it at the minimum and raise `NumericSetting.expandedWidth/Height` if needed.
 - **Idle CPU must stay near 0%.** No always-running timers or polling; stay event-driven.
 - **zsh has a built-in `log` command.** Call Apple's tool as `/usr/bin/log show|stream`.
   Only `.notice` and higher are saved to the log; `.info` and `.debug` appear only in a live

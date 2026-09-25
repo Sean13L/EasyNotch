@@ -34,7 +34,7 @@ players (see §6.1), calendar/weather/battery widgets, and settings sync between
 | **Notch** | **185 pt wide × 32 pt tall** (menu bar is 33 pt) |
 | Swift | 6.4 (from Command Line Tools) |
 | Xcode | ✅ 27.0 (27A266a), macOS 27.0 SDK |
-| Code signing | ⚠️ No certificate yet (no Apple ID in Xcode), so builds are signed ad-hoc. Needed before Phase 3 |
+| Code signing | ✅ Apple Development certificate, Personal Team `Y4Q9CP9K8V` |
 | Homebrew, git, gh | ✅ installed |
 | XcodeGen | ✅ 2.46.0 |
 
@@ -272,9 +272,13 @@ folder.
   waiting prompt never blocks anything else. It caches compiled scripts, sets a 3-second timeout
   in every script, and turns error codes into clear states. For example, `-1743` (not
   authorized) shows an "Open System Settings" button.
-- **Compact view.** Album art in the left wing and a pulsing waveform symbol, in the player's
-  color, in the right. It's decorative; real audio levels would need the Screen Recording
-  permission, which isn't worth it. A running Pomodoro takes priority over music for the wings.
+- **Compact view.** Album art in the left wing, and four bouncing equalizer bars in the
+  player's color in the right. The bars run on Core Animation, so they cost no app CPU, and each
+  follows its own pattern and speed. They're decorative; real audio levels would need the Screen
+  Recording permission, which isn't worth it. A running Pomodoro takes priority over music for
+  the wings.
+- **Layout.** Shuffle · previous · play · next · repeat sit centered under the progress bar.
+  Volume sits in the header row.
 - **Expanded view.** Artwork, title, artist, album, scrubber, previous/play/next, volume,
   shuffle/repeat, "open in app", and a player switcher.
 - **Why not every player (browsers, Podcasts, and so on).** That needs Apple's private
@@ -340,7 +344,7 @@ the moment it changes, and the notch updates live as you adjust it.
 | Group | Options |
 |---|---|
 | Behavior | Open on hover or click; hover delay; close delay; hot-zone size; open on file drag; haptics; hide in full-screen apps |
-| Size & shape | Expanded width and height; corner radius; compact wing width |
+| Size & shape | Expanded width and height (minimum 560×190 pt, so every tab fits); corner radius; compact wing width (minimum 48 pt) |
 | Animation | A preset (Smooth, Snappy, Bouncy) or a custom spring |
 | Modules | Turn Music, Shelf, and Pomodoro on or off; drag to reorder tabs; default tab; which live activities appear in compact mode |
 | Appearance | Accent color; background (pure black to match the hardware, or blur); tab labels on or off |
