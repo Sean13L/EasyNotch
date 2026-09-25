@@ -11,4 +11,6 @@ nonisolated enum Log {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "com.seanl.easynotch"
 
     static let app = Logger(subsystem: subsystem, category: "app")
+    static let notch = Logger(subsystem: subsystem, category: "notch")
+    static let settings = Logger(subsystem: subsystem, category: "settings")
 }

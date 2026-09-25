@@ -119,7 +119,7 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 4. `NotchWindowController` sees the change and makes the panel accept clicks.
 5. `NotchRootView` sees `state == .open` and animates the black shape from 185 × 32 to the expanded
    size (default 640 × 200) with a spring, then fades the content in.
-6. Once the pointer has been outside the panel for the **close delay** (default 0.3 s), everything
+6. Once the pointer has been outside the panel for the **close delay** (default 0.15 s), everything
    runs in reverse.
 
 ---
@@ -162,7 +162,7 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 | State | Looks like |
 |---|---|
 | **Closed** | A black shape exactly 185 × 32, indistinguishable from the hardware notch |
-| **Compact** ("live activity") | Same height, with wider "wings": album art and audio bars, or the Pomodoro ring and time. You choose which activities appear |
+| **Compact** ("live activity") | Same height, with wider "wings": album art and audio bars, or the Pomodoro ring and time. You choose which activities appear. *Arrives in Phase 2 with Pomodoro, the first feature that needs it* |
 | **Open** | The expanded panel (default 640 × 200 pt, adjustable) with a tab bar for the enabled modules |
 
 | From | Event | To |
@@ -333,8 +333,10 @@ the moment it changes, and the notch updates live as you adjust it.
 | Pomodoro | Durations; cycles; auto-start; sounds; notifications |
 | General | Launch at login; global keyboard shortcut (Phase 5); reset to defaults; export and import settings |
 
-The Settings window has a sidebar with one pane per group. You can open it from the menu-bar
-icon, from the gear in the expanded notch, or by right-clicking the notch.
+The Settings window has a sidebar with one pane per group, and **Restore Defaults…** sits at
+the bottom of the sidebar. You can open it from the menu-bar icon, from the gear in the
+expanded notch, or by right-clicking the notch (Phase 5). While the Size pane is showing and the
+window is in front, the notch stays open as a live preview.
 
 ---
 

@@ -8,7 +8,7 @@ struct EasyNotchApp: App {
 
     var body: some Scene {
         MenuBarExtra("EasyNotch", systemImage: "menubar.rectangle") {
-            MenuBarMenu()
+            MenuBarMenu(services: appDelegate.services)
         }
     }
 }

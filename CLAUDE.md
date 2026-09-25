@@ -13,7 +13,11 @@ sentence or two, and prefer simple, readable code over clever code.
 ## Status
 - **Phase 0 (setup): done.** The skeleton agent app (menu-bar icon with Quit) builds, its tests
   pass, and it runs.
-- **Now:** Phase 1, the notch shell. Plan it in Plan mode and spike the `NotchPanel` first.
+- **Phase 1 (notch shell): done.** Hover open/close, tabs with placeholders, and a Settings
+  window (Behavior and Size panes, live size preview). 26 tests pass; the owner walked through
+  the QA checklist.
+- **Now:** Phase 2, Pomodoro. It also brings the compact "live activity" state, deferred from
+  Phase 1.
 - **Signing:** ad-hoc for now (there's no Apple ID in Xcode yet). Switch to an Apple
   Development identity before Phase 3.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
@@ -32,6 +36,7 @@ xcodegen generate   # regenerate EasyNotch.xcodeproj from project.yml
 xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -configuration Debug -derivedDataPath build build
 xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -derivedDataPath build test
 killall EasyNotch; open build/Build/Products/Debug/EasyNotch.app
+open build/Build/Products/Debug/EasyNotch.app --args -OpenSettingsOnLaunch YES   # Debug only: opens Settings at launch
 ```
 
 ## Architecture rules
@@ -65,6 +70,12 @@ killall EasyNotch; open build/Build/Products/Debug/EasyNotch.app
 - **The panel ignores mouse events while closed** so menu-bar clicks pass through. Hover comes
   from global `NSEvent` mouse monitors, which need no permission. Keyboard monitors would need
   Accessibility, so don't add them without asking.
+- **Mark `Shape` types and similar pure-SwiftUI conformances `nonisolated`.** Because the
+  default isolation is MainActor, the conformance otherwise fails with "crosses into main
+  actor-isolated code".
+- **The screen-control tool can't grant EasyNotch while it runs from `build/`,** and its
+  screenshots black out EasyNotch's windows. Verify behavior through `.debug` logs, and leave the
+  visual checks to the owner.
 - **Idle CPU must stay near 0%.** No always-running timers or polling; stay event-driven.
 - **zsh has a built-in `log` command.** Call Apple's tool as `/usr/bin/log show|stream`.
   Only `.notice` and higher are saved to the log; `.info` and `.debug` appear only in a live
