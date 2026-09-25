@@ -1,0 +1,79 @@
+# XcodeGen spec: the source of truth for EasyNotch.xcodeproj (see docs/BLUEPRINT.md D2).
+# After editing this file, or adding/removing source files, run: xcodegen generate
+name: EasyNotch
+
+options:
+  bundleIdPrefix: com.seanl
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Code runs on the main actor unless marked otherwise (BLUEPRINT D8).
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
+    # "Sign to Run Locally" (ad-hoc). Switch to an Apple Development identity before Phase 3,
+    # otherwise macOS re-asks for Automation permission after every build.
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  EasyNotch:
+    type: application
+    platform: macOS
+    sources:
+      - path: EasyNotch
+    info:
+      path: EasyNotch/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: EasyNotch
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSApplicationCategoryType: public.app-category.productivity
+        # Agent app: no Dock icon, no app menu (BLUEPRINT D4).
+        LSUIElement: true
+        NSAppleEventsUsageDescription: EasyNotch controls Spotify and Music so you can play, pause, and skip tracks from the notch.
+    entitlements:
+      path: EasyNotch/Resources/EasyNotch.entitlements
+      properties:
+        # App Sandbox is intentionally absent (BLUEPRINT D5).
+        com.apple.security.automation.apple-events: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seanl.easynotch
+        ENABLE_HARDENED_RUNTIME: "YES"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  EasyNotchTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: EasyNotchTests
+    dependencies:
+      - target: EasyNotch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seanl.easynotch.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+
+schemes:
+  EasyNotch:
+    build:
+      targets:
+        EasyNotch: all
+        EasyNotchTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - EasyNotchTests
+    archive:
+      config: Release
