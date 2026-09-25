@@ -19,7 +19,9 @@ sentence or two, and prefer simple, readable code over clever code.
 - **Phase 2 (Pomodoro + compact live activity): done, but the owner hasn't hands-on tested
   it yet.** The owner was away; Claude verified it with unit tests (47) and Debug-flag runs.
   The owner should walk through `docs/QA_CHECKLIST.md` Phase 2.
-- **Now:** Phase 3, music (Spotify and Apple Music). The owner said to proceed without asking.
+- **Phase 3 (music): committed.** 65 tests pass. Real playback with Automation permission is
+  still to be checked by the owner (`docs/QA_CHECKLIST.md` Phase 3).
+- **Next:** Phase 4, the file shelf and AirDrop.
 - **Signing:** ad-hoc for now (there's no Apple ID in Xcode yet). Switch to an Apple
   Development identity before Phase 3.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
@@ -89,6 +91,14 @@ Test runs write real timer state; clean up with
   macOS woke a 60 s sleep about 4 s late.
 - **Pomodoro holds a `ProcessInfo` activity while running,** so App Nap doesn't throttle the
   countdown.
+- **Music permission:** never trigger the Automation prompt from background code. Check it
+  with `AppleScriptRunner.permission(askIfNeeded: false)`, and only pass `askIfNeeded: true` or
+  run commands in response to a user action.
+- **Listen to other apps' distributed notifications with `DistributedNotificationObserver`**
+  (`.deliverImmediately`). The block-based API holds notifications while EasyNotch is inactive,
+  which is nearly always.
+- **Features never reference each other.** Helpers shared between features go in `Shared/`
+  (e.g. `SecondsTimeline`).
 - **Idle CPU must stay near 0%.** No always-running timers or polling; stay event-driven.
 - **zsh has a built-in `log` command.** Call Apple's tool as `/usr/bin/log show|stream`.
   Only `.notice` and higher are saved to the log; `.info` and `.debug` appear only in a live

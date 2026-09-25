@@ -39,8 +39,9 @@ struct ExpandedView: View {
 
             Group {
                 switch viewModel.selectedModule {
+                case .music: MusicView()
                 case .pomodoro: PomodoroView()
-                case .music, .shelf: ModulePlaceholder(module: viewModel.selectedModule)
+                case .shelf: ModulePlaceholder(module: viewModel.selectedModule)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

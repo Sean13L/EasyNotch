@@ -16,7 +16,7 @@ struct PomodoroCompactView: View {
         let engine = pomodoro.engine
         let config = pomodoro.config
 
-        PomodoroTimeline(isRunning: engine.isRunning) { now in
+        SecondsTimeline(isRunning: engine.isRunning) { now in
             switch side {
             case .leading:
                 ZStack {

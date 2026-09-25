@@ -37,15 +37,26 @@ extension BoolSetting {
     static let pomodoroInNotch = BoolSetting(key: "pomodoro.showInNotch", defaultValue: true)
     static let pomodoroNotifications = BoolSetting(key: "pomodoro.notifications", defaultValue: true)
     static let pomodoroSoundEnabled = BoolSetting(key: "pomodoro.soundEnabled", defaultValue: true)
+    static let musicInNotch = BoolSetting(key: "music.showInNotch", defaultValue: true)
+}
+
+/// Describes one text setting: where it's saved and its default.
+nonisolated struct StringSetting: Sendable {
+    let key: String
+    let defaultValue: String
+}
+
+extension StringSetting {
+    /// Name of a macOS system sound.
+    static let pomodoroSound = StringSetting(key: "pomodoro.sound", defaultValue: "Glass")
+    /// "automatic", or a player's raw value ("spotify", "appleMusic").
+    static let musicPreferredPlayer = StringSetting(key: "music.preferredPlayer", defaultValue: "automatic")
 }
 
 /// Every user-adjustable option. Each value loads from UserDefaults (falling back to its
 /// default) and saves the moment it changes; views reading it update live.
 @Observable
 final class AppSettings {
-    static let defaultPomodoroSound = "Glass"
-    private static let pomodoroSoundKey = "pomodoro.sound"
-
     // MARK: Notch behavior
 
     /// Seconds the pointer must rest on the notch before it opens.
@@ -77,7 +88,14 @@ final class AppSettings {
     var pomodoroNotifications: Bool { didSet { save(pomodoroNotifications, .pomodoroNotifications) } }
     var pomodoroSoundEnabled: Bool { didSet { save(pomodoroSoundEnabled, .pomodoroSoundEnabled) } }
     /// Name of a macOS system sound, e.g. "Glass".
-    var pomodoroSound: String { didSet { defaults.set(pomodoroSound, forKey: Self.pomodoroSoundKey) } }
+    var pomodoroSound: String { didSet { save(pomodoroSound, .pomodoroSound) } }
+
+    // MARK: Music
+
+    /// "automatic", "spotify", or "appleMusic": which player to show when several are open.
+    var musicPreferredPlayer: String { didSet { save(musicPreferredPlayer, .musicPreferredPlayer) } }
+    /// Show what's playing beside the closed notch.
+    var musicInNotch: Bool { didSet { save(musicInNotch, .musicInNotch) } }
 
     // MARK: Storage
 
@@ -101,7 +119,9 @@ final class AppSettings {
         pomodoroInNotch = Self.load(.pomodoroInNotch, from: defaults)
         pomodoroNotifications = Self.load(.pomodoroNotifications, from: defaults)
         pomodoroSoundEnabled = Self.load(.pomodoroSoundEnabled, from: defaults)
-        pomodoroSound = defaults.string(forKey: Self.pomodoroSoundKey) ?? Self.defaultPomodoroSound
+        pomodoroSound = Self.load(.pomodoroSound, from: defaults)
+        musicPreferredPlayer = Self.load(.musicPreferredPlayer, from: defaults)
+        musicInNotch = Self.load(.musicInNotch, from: defaults)
     }
 
     func resetToDefaults() {
@@ -121,7 +141,9 @@ final class AppSettings {
         pomodoroInNotch = BoolSetting.pomodoroInNotch.defaultValue
         pomodoroNotifications = BoolSetting.pomodoroNotifications.defaultValue
         pomodoroSoundEnabled = BoolSetting.pomodoroSoundEnabled.defaultValue
-        pomodoroSound = Self.defaultPomodoroSound
+        pomodoroSound = StringSetting.pomodoroSound.defaultValue
+        musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue
+        musicInNotch = BoolSetting.musicInNotch.defaultValue
     }
 
     private func save(_ value: Double, _ setting: NumericSetting) {
@@ -129,6 +151,10 @@ final class AppSettings {
     }
 
     private func save(_ value: Bool, _ setting: BoolSetting) {
+        defaults.set(value, forKey: setting.key)
+    }
+
+    private func save(_ value: String, _ setting: StringSetting) {
         defaults.set(value, forKey: setting.key)
     }
 
@@ -145,5 +171,9 @@ final class AppSettings {
     private static func load(_ setting: BoolSetting, from defaults: UserDefaults) -> Bool {
         guard defaults.object(forKey: setting.key) != nil else { return setting.defaultValue }
         return defaults.bool(forKey: setting.key)
+    }
+
+    private static func load(_ setting: StringSetting, from defaults: UserDefaults) -> String {
+        defaults.string(forKey: setting.key) ?? setting.defaultValue
     }
 }

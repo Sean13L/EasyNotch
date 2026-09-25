@@ -9,7 +9,7 @@ struct PomodoroView: View {
         let engine = pomodoro.engine
         let config = pomodoro.config
 
-        PomodoroTimeline(isRunning: engine.isRunning) { now in
+        SecondsTimeline(isRunning: engine.isRunning) { now in
             HStack(spacing: 32) {
                 ZStack {
                     PomodoroRing(progress: engine.progress(at: now, config: config), color: engine.phase.color, lineWidth: 6)

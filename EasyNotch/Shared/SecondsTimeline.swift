@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Redraws its content once a second while the timer runs, and not at all otherwise, so a
-/// paused or idle timer costs no CPU.
-struct PomodoroTimeline<Content: View>: View {
+/// Redraws its content once a second while something is running, and not at all otherwise, so a
+/// paused timer or track costs no CPU.
+struct SecondsTimeline<Content: View>: View {
     let isRunning: Bool
     @ViewBuilder let content: (Date) -> Content
 

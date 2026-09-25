@@ -3,28 +3,40 @@
 final class AppServices {
     let settings = AppSettings()
     let pomodoro: PomodoroController
+    let nowPlaying: NowPlayingService
     private let mouseTracker = MouseTracker()
     private let screenManager: ScreenManager
     private let settingsWindow: SettingsWindowController
 
     init() {
         pomodoro = PomodoroController(settings: settings)
-        screenManager = ScreenManager(settings: settings, mouseTracker: mouseTracker, pomodoro: pomodoro)
-        settingsWindow = SettingsWindowController(settings: settings)
+        nowPlaying = NowPlayingService(settings: settings)
+        screenManager = ScreenManager(
+            settings: settings,
+            mouseTracker: mouseTracker,
+            features: NotchFeatures(pomodoro: pomodoro, nowPlaying: nowPlaying)
+        )
+        settingsWindow = SettingsWindowController(settings: settings, nowPlaying: nowPlaying)
 
         // Wire the pieces together now that they all exist.
         screenManager.onShowSettings = { [weak self] in self?.showSettings() }
         settingsWindow.onPreviewChange = { [weak self] isPreviewing in
             self?.screenManager.setPreview(isPreviewing)
         }
-        // What appears beside the closed notch. Phase 3 adds music here.
-        screenManager.liveActivityProvider = { [settings, pomodoro] in
-            settings.pomodoroInNotch && pomodoro.engine.isActive ? .pomodoro : nil
+        // What appears beside the closed notch.
+        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying] in
+            let showTimer = settings.pomodoroInNotch && pomodoro.engine.isActive
+            return LiveActivity.resolve(
+                timerRunning: showTimer && pomodoro.engine.isRunning,
+                timerPaused: showTimer && !pomodoro.engine.isRunning,
+                musicPlaying: settings.musicInNotch && nowPlaying.isPlaying
+            )
         }
     }
 
     func start() {
         pomodoro.activate()
+        nowPlaying.activate()
         screenManager.start()
     }
 

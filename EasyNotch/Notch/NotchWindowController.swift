@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+/// The feature services the notch's views use, handed to SwiftUI through the environment.
+struct NotchFeatures {
+    let pomodoro: PomodoroController
+    let nowPlaying: NowPlayingService
+}
+
 /// Owns the notch window for one screen and keeps it in sync with the view model and the
 /// size settings.
 final class NotchWindowController {
@@ -11,9 +17,8 @@ final class NotchWindowController {
     private let settings: AppSettings
     private var metrics: ScreenMetrics
 
-    /// Returns nil for a screen without a notch. `pomodoro` is handed to the SwiftUI views
-    /// through the environment.
-    init?(screen: NSScreen, settings: AppSettings, pomodoro: PomodoroController) {
+    /// Returns nil for a screen without a notch.
+    init?(screen: NSScreen, settings: AppSettings, features: NotchFeatures) {
         guard let displayID = screen.displayID,
               let metrics = screen.notchMetrics,
               let geometry = Self.geometry(for: metrics, settings: settings)
@@ -26,7 +31,8 @@ final class NotchWindowController {
         panel = NotchPanel(frame: geometry.panelFrame)
 
         let rootView = NotchRootView(viewModel: viewModel)
-            .environment(pomodoro)
+            .environment(features.pomodoro)
+            .environment(features.nowPlaying)
         let hostingView = NotchHostingView(rootView: rootView)
         // Without this, SwiftUI would resize the window to fit its content; we size it ourselves.
         hostingView.sizingOptions = []

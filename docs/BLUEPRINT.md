@@ -75,8 +75,8 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 ├────────────────────────┬────────────────────────┬──────────────────────────┤
 │ MUSIC                  │ SHELF                  │ POMODORO                 │
 │ NowPlayingService      │ ShelfStore             │ PomodoroEngine           │
-│ SpotifySource          │ SharingService         │ PomodoroController       │
-│ AppleMusicSource       │ ShelfView              │ PomodoroView             │
+│ MediaPlayerSource      │ SharingService         │ PomodoroController       │
+│ Spotify, AppleMusic    │ ShelfView              │ PomodoroView             │
 │ MusicView              │ ShelfItemView          │ PomodoroCompactView      │
 │ MusicCompactView       │                        │                          │
 ├────────────────────────┴────────────────────────┴──────────────────────────┤
@@ -224,7 +224,7 @@ folder.
     │ notify  │ AppleScript                 │ notify  │ AppleScript
     │ (free)  │ commands                    │ (free)  │ commands
     ▼         │                             ▼         │
-  SpotifySource                           AppleMusicSource
+  MediaPlayerSource + Spotify.profile     MediaPlayerSource + AppleMusic.profile
         │                                         │
         └────────────────────┬────────────────────┘
                              ▼
@@ -244,20 +244,37 @@ folder.
 
 **How it works:**
 
-- **`MediaSource` protocol.** Both players implement the same interface, so supporting another
-  player later means writing one new file.
+- **One engine, two profiles.** `MediaPlayerSource` does the listening, asking, and artwork
+  loading. Everything app-specific lives in a `PlayerProfile`:
+  - the bundle ID and notification name
+  - the AppleScript
+  - how to read the replies
+
+  `Spotify.swift` and `AppleMusic.swift` each hold one profile, so supporting another scriptable
+  player means writing one new file.
+- **Never prompts on its own.** macOS's `AEDeterminePermissionToAutomateTarget` checks the
+  permission *without* asking. Background refreshes use AppleScript only once permission is
+  already granted. The prompt appears only when you press a control or **Allow…**. Until then,
+  titles and progress come from the broadcasts.
+- **Broadcasts are delivered immediately.** macOS normally holds another app's notifications
+  until the receiving app is active, which an agent app rarely is. `DistributedNotificationObserver`
+  asks for immediate delivery.
 - **Progress bar without polling.** We store the position, a timestamp, and whether it's playing.
   The view computes the elapsed time live.
 - **No accidental launches.** We only talk to a player if `NSRunningApplication` says it's
   running, because sending it a command would launch it.
-- **Choosing the active player.** The one that's playing wins. If both are playing, the one that
-  started most recently wins. If neither is, the last one used stays. You can also pin a
-  preferred player.
-- **`AppleScriptRunner` actor.** It compiles each script once, runs it off the main thread, and
-  turns error codes into clear states. For example, `-1743` (not authorized) shows a "Grant
-  access" button that opens System Settings.
-- **Compact view.** Album art in the left wing and animated bars in the right. The bars are
-  decorative; real audio levels would need the Screen Recording permission, which isn't worth it.
+- **Choosing the active player** (`ActivePlayerPicker`, unit-tested), in order:
+  1. a player you switched to by hand, until another one starts playing
+  2. the one that's playing (your preferred one if both are, otherwise the latest to start)
+  3. your preferred player
+  4. the most recently active one
+- **`AppleScriptRunner` actor.** It runs on its own serial queue, so a slow player or a
+  waiting prompt never blocks anything else. It caches compiled scripts, sets a 3-second timeout
+  in every script, and turns error codes into clear states. For example, `-1743` (not
+  authorized) shows an "Open System Settings" button.
+- **Compact view.** Album art in the left wing and a pulsing waveform symbol, in the player's
+  color, in the right. It's decorative; real audio levels would need the Screen Recording
+  permission, which isn't worth it. A running Pomodoro takes priority over music for the wings.
 - **Expanded view.** Artwork, title, artist, album, scrubber, previous/play/next, volume,
   shuffle/repeat, "open in app", and a player switcher.
 - **Why not every player (browsers, Podcasts, and so on).** That needs Apple's private
@@ -393,8 +410,9 @@ EasyNotch/
 │   │   │                     ScreenManager, MouseTracker, NotchViewModel, NotchModule
 │   │   └── Views/            NotchRootView, NotchShape, CompactView, ExpandedView, TabBar
 │   ├── Features/
-│   │   ├── Music/            MediaSource, SpotifySource, AppleMusicSource, NowPlaying,
-│   │   │                     NowPlayingService, AppleScriptRunner, MusicView, MusicCompactView
+│   │   ├── Music/            PlayerProfile, PlayerSnapshot, Spotify, AppleMusic,
+│   │   │                     AppleScriptRunner, MediaPlayerSource, ActivePlayerPicker,
+│   │   │                     NowPlayingService, MusicView, MusicCompactView, MusicArtwork
 │   │   ├── Shelf/            ShelfItem, ShelfStore, SharingService, ShelfView, ShelfItemView
 │   │   └── Pomodoro/         PomodoroEngine, PomodoroController, PomodoroView,
 │   │                         PomodoroCompactView
@@ -435,7 +453,7 @@ EasyNotch/
 | Window level, click-through, or Spaces behave differently on macOS 27 ⚠️ | High | Phase 1 opens with a spike that proves this before anything else is built |
 | The hot zone gets in the way of menu-bar items beside the notch | Medium | A small hot zone and a hover delay, both configurable |
 | macOS asks for the Automation permission again after every build | Medium | A stable signing identity (Apple Development) |
-| Spotify changes its AppleScript commands | Medium | Contained in `SpotifySource`; errors fall back to "controls unavailable" |
+| Spotify changes its AppleScript commands | Medium | Contained in `Spotify.swift`; errors fall back to "controls unavailable" |
 | Drag detection misses some drag sources | Low | You can always open the notch first, then drop |
 | Swift 6 concurrency errors are confusing | Low | Main actor by default, and Claude explains any error that appears |
 
@@ -454,7 +472,7 @@ Every phase ends the same way:
 | **0. Setup** | Tools and an empty app | Xcode and XcodeGen are installed; git is set up; the app builds from the command line and shows a menu-bar icon with Quit, and no Dock icon | S |
 | **1. Notch shell** | The core window | See the list below | L |
 | **2. Pomodoro** ✅ | First real module (no permissions, pure logic); also adds the compact live-activity state. Defaults: breaks start automatically, focus waits for Start | The full focus → break → long-break cycle works; pause/skip/reset work; a notification and sound play at the end; timing stays accurate after sleep; the compact ring shows; settings pane; engine unit tests | M |
-| **3. Music** | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
+| **3. Music** ✅ | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
 | **4. Shelf + AirDrop** | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
 | **5. Customization** | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
 | **6. Polish & ship** | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |

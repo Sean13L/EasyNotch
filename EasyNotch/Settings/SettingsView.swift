@@ -4,6 +4,7 @@ import SwiftUI
 enum SettingsPane: String, CaseIterable, Identifiable {
     case behavior
     case size
+    case music
     case pomodoro
 
     var id: Self { self }
@@ -12,6 +13,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .behavior: "Behavior"
         case .size: "Size"
+        case .music: "Music"
         case .pomodoro: "Pomodoro"
         }
     }
@@ -20,6 +22,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .behavior: "cursorarrow.motionlines"
         case .size: "arrow.up.left.and.arrow.down.right"
+        case .music: "music.note"
         case .pomodoro: "timer"
         }
     }
@@ -28,6 +31,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 /// The Settings window's content: a sidebar of panes, with the selected pane on the right.
 struct SettingsView: View {
     let settings: AppSettings
+    let nowPlaying: NowPlayingService
     /// Reports the selected pane, so the window controller can start or stop the notch preview.
     let onPaneChange: (SettingsPane) -> Void
 
@@ -52,6 +56,7 @@ struct SettingsView: View {
             switch pane {
             case .behavior: BehaviorPane(settings: settings)
             case .size: SizePane(settings: settings)
+            case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
             case .pomodoro: PomodoroPane(settings: settings)
             }
         }

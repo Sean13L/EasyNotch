@@ -9,11 +9,13 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     var onPreviewChange: ((Bool) -> Void)?
 
     private let settings: AppSettings
+    private let nowPlaying: NowPlayingService
     private var window: NSWindow?
     private var selectedPane: SettingsPane = .behavior
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, nowPlaying: NowPlayingService) {
         self.settings = settings
+        self.nowPlaying = nowPlaying
     }
 
     func show() {
@@ -43,7 +45,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
-        let view = SettingsView(settings: settings) { [weak self] pane in
+        let view = SettingsView(settings: settings, nowPlaying: nowPlaying) { [weak self] pane in
             self?.selectedPane = pane
             self?.updatePreview()
         }

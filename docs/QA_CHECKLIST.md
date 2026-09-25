@@ -91,3 +91,48 @@ Restore them afterwards.
       finished and the next one has started from the wake time.
 - [ ] Quit EasyNotch mid-session and reopen it: the timer is still running with the correct time.
 - [ ] Changing the focus length mid-session doesn't change the running timer, only the next one.
+
+---
+
+## Phase 3: Music (Spotify and Apple Music)
+
+**Before you start:** sign in to Xcode with your Apple ID (Xcode → Settings → Accounts) and tell
+Claude, so the app gets a stable signature. Until then, macOS may ask for permission again after
+every rebuild.
+
+### Without permission (nothing has been allowed yet)
+- [ ] With Spotify open but not playing, the Music tab says "Spotify is open" and shows an
+      **Allow…** hint. No permission prompt appears on its own.
+- [ ] Press play in Spotify itself. Within about a second, the tab shows the title, artist,
+      album, and a moving progress bar, still without any prompt.
+- [ ] The closed notch shows the music wings (a cover placeholder on the left, a pulsing
+      waveform on the right). Hovering them opens the Music tab.
+
+### Granting permission
+- [ ] Press **Allow…** (or any control button). macOS asks: "EasyNotch wants to control
+      Spotify". Choose Allow.
+- [ ] Cover art appears. The volume slider and the shuffle and repeat buttons appear.
+- [ ] Do the same for the Music app.
+- [ ] Settings → Music shows each player's status (Allowed / Not asked yet / Not allowed).
+
+### Controls (for each player)
+- [ ] Play/pause responds instantly and matches the app.
+- [ ] Next and previous change the track; the title and cover art update.
+- [ ] Dragging the progress bar seeks.
+- [ ] The volume slider changes the app's volume.
+- [ ] Shuffle toggles. Repeat cycles off → all → one (Music) or on/off (Spotify).
+- [ ] The app icon (top right) opens the player.
+
+### Several players
+- [ ] With Spotify and Music both open, the one that's playing is shown. The other player's
+      faded icon switches to it.
+- [ ] Settings → Music → "When several players are open, show" picks a favorite.
+- [ ] A running Pomodoro timer takes the wings over music; a paused one gives them back.
+
+### Edge cases
+- [ ] Quit the player: the tab shows "Nothing playing" with **Open Spotify / Open Music** buttons,
+      and the wings disappear.
+- [ ] Deny permission (or turn it off in System Settings → Privacy & Security → Automation). The
+      tab explains this and offers **Open System Settings**. Titles from broadcasts still appear.
+- [ ] EasyNotch never launches a player by itself, except when you press Play with it closed.
+- [ ] CPU stays around 0% while music plays and the notch is closed.
