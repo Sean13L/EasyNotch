@@ -5,6 +5,9 @@ struct SettingSlider: View {
     enum Unit {
         case seconds
         case points
+        case minutes
+        /// A plain count, e.g. "4 sessions". The associated value is the plural noun.
+        case count(String)
     }
 
     let title: String
@@ -26,9 +29,12 @@ struct SettingSlider: View {
     }
 
     private var formattedValue: String {
+        let whole = Int(value.rounded())
         switch unit {
-        case .seconds: value.formatted(.number.precision(.fractionLength(2))) + " s"
-        case .points: "\(Int(value.rounded())) pt"
+        case .seconds: return value.formatted(.number.precision(.fractionLength(2))) + " s"
+        case .points: return "\(whole) pt"
+        case .minutes: return "\(whole) min"
+        case let .count(noun): return "\(whole) \(noun)"
         }
     }
 }

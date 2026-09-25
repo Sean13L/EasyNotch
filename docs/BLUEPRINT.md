@@ -453,7 +453,7 @@ Every phase ends the same way:
 |---|---|---|---|
 | **0. Setup** | Tools and an empty app | Xcode and XcodeGen are installed; git is set up; the app builds from the command line and shows a menu-bar icon with Quit, and no Dock icon | S |
 | **1. Notch shell** | The core window | See the list below | L |
-| **2. Pomodoro** | First real module (no permissions, pure logic) | The full focus → break → long-break cycle works; pause/skip/reset work; a notification and sound play at the end; timing stays accurate after sleep; the compact ring shows; settings pane; engine unit tests | M |
+| **2. Pomodoro** ✅ | First real module (no permissions, pure logic); also adds the compact live-activity state. Defaults: breaks start automatically, focus waits for Start | The full focus → break → long-break cycle works; pause/skip/reset work; a notification and sound play at the end; timing stays accurate after sleep; the compact ring shows; settings pane; engine unit tests | M |
 | **3. Music** | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
 | **4. Shelf + AirDrop** | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
 | **5. Customization** | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |

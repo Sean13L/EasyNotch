@@ -5,16 +5,20 @@ import AppKit
 final class ScreenManager {
     /// Called when the gear button in any notch is pressed.
     var onShowSettings: (() -> Void)?
+    /// Decides what shows beside the closed notch; passed on to every screen's notch.
+    var liveActivityProvider: () -> LiveActivity? = { nil }
 
     private let settings: AppSettings
     private let mouseTracker: MouseTracker
+    private let pomodoro: PomodoroController
     private var controllers: [CGDirectDisplayID: NotchWindowController] = [:]
     private var observers: [NSObjectProtocol] = []
     private var isPreviewing = false
 
-    init(settings: AppSettings, mouseTracker: MouseTracker) {
+    init(settings: AppSettings, mouseTracker: MouseTracker, pomodoro: PomodoroController) {
         self.settings = settings
         self.mouseTracker = mouseTracker
+        self.pomodoro = pomodoro
     }
 
     func start() {
@@ -53,8 +57,9 @@ final class ScreenManager {
             current.insert(id)
             if let controller = controllers[id] {
                 controller.update(screen: screen)
-            } else if let controller = NotchWindowController(screen: screen, settings: settings) {
+            } else if let controller = NotchWindowController(screen: screen, settings: settings, pomodoro: pomodoro) {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
+                controller.viewModel.liveActivityProvider = liveActivityProvider
                 controller.viewModel.setPinnedOpen(isPreviewing)
                 controllers[id] = controller
             }

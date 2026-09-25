@@ -13,9 +13,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         services.start()
 
         #if DEBUG
-        // Development shortcut: open EasyNotch.app --args -OpenSettingsOnLaunch YES
+        // Development shortcuts, e.g. open EasyNotch.app --args -OpenSettingsOnLaunch YES
         if UserDefaults.standard.bool(forKey: "OpenSettingsOnLaunch") {
             services.showSettings()
+        }
+        if UserDefaults.standard.bool(forKey: "StartPomodoroOnLaunch"), !services.pomodoro.engine.isActive {
+            services.pomodoro.startPauseOrResume()
         }
         #endif
     }

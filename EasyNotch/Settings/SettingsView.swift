@@ -4,6 +4,7 @@ import SwiftUI
 enum SettingsPane: String, CaseIterable, Identifiable {
     case behavior
     case size
+    case pomodoro
 
     var id: Self { self }
 
@@ -11,6 +12,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .behavior: "Behavior"
         case .size: "Size"
+        case .pomodoro: "Pomodoro"
         }
     }
 
@@ -18,6 +20,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .behavior: "cursorarrow.motionlines"
         case .size: "arrow.up.left.and.arrow.down.right"
+        case .pomodoro: "timer"
         }
     }
 }
@@ -49,6 +52,7 @@ struct SettingsView: View {
             switch pane {
             case .behavior: BehaviorPane(settings: settings)
             case .size: SizePane(settings: settings)
+            case .pomodoro: PomodoroPane(settings: settings)
             }
         }
         .frame(minWidth: 600, minHeight: 380)

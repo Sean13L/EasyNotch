@@ -11,8 +11,9 @@ final class NotchWindowController {
     private let settings: AppSettings
     private var metrics: ScreenMetrics
 
-    /// Returns nil for a screen without a notch.
-    init?(screen: NSScreen, settings: AppSettings) {
+    /// Returns nil for a screen without a notch. `pomodoro` is handed to the SwiftUI views
+    /// through the environment.
+    init?(screen: NSScreen, settings: AppSettings, pomodoro: PomodoroController) {
         guard let displayID = screen.displayID,
               let metrics = screen.notchMetrics,
               let geometry = Self.geometry(for: metrics, settings: settings)
@@ -24,7 +25,9 @@ final class NotchWindowController {
         viewModel = NotchViewModel(geometry: geometry, settings: settings)
         panel = NotchPanel(frame: geometry.panelFrame)
 
-        let hostingView = NotchHostingView(rootView: NotchRootView(viewModel: viewModel))
+        let rootView = NotchRootView(viewModel: viewModel)
+            .environment(pomodoro)
+        let hostingView = NotchHostingView(rootView: rootView)
         // Without this, SwiftUI would resize the window to fit its content; we size it ourselves.
         hostingView.sizingOptions = []
         panel.contentView = hostingView
@@ -62,6 +65,7 @@ final class NotchWindowController {
         withObservationTracking {
             _ = settings.expandedWidth
             _ = settings.expandedHeight
+            _ = settings.compactWingWidth
             _ = settings.hotZoneMargin
         } onChange: { [weak self] in
             // onChange fires just *before* the new value is stored, and only once, so re-read
@@ -77,6 +81,7 @@ final class NotchWindowController {
         NotchGeometry(
             metrics: metrics,
             openSize: CGSize(width: settings.expandedWidth, height: settings.expandedHeight),
+            compactWingWidth: settings.compactWingWidth,
             hotZoneMargin: settings.hotZoneMargin
         )
     }

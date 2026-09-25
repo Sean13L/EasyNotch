@@ -24,13 +24,17 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
     let notchRect: CGRect
     /// A pointer resting here opens the notch.
     let hotZone: CGRect
+    /// The notch widened by "wings" on each side, for a live activity (the compact state).
+    let compactRect: CGRect
+    /// The hover area while the compact state is showing.
+    let compactHotZone: CGRect
     /// The expanded panel (the open state).
     let openRect: CGRect
-    /// The window's frame: `openRect` plus shadow room, kept on screen.
+    /// The window's frame: room for every state plus the shadow, kept on screen.
     let panelFrame: CGRect
 
     /// Returns nil for a screen without a notch.
-    init?(metrics: ScreenMetrics, openSize: CGSize, hotZoneMargin: CGFloat) {
+    init?(metrics: ScreenMetrics, openSize: CGSize, compactWingWidth: CGFloat, hotZoneMargin: CGFloat) {
         let screen = metrics.frame
         let notchWidth = screen.width - metrics.leftAreaWidth - metrics.rightAreaWidth
         guard metrics.notchHeight > 0, notchWidth > 0 else { return nil }
@@ -45,6 +49,10 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
         // Also grows upward past the screen edge, so the very top row of pixels counts.
         hotZone = notchRect.insetBy(dx: -hotZoneMargin, dy: -hotZoneMargin)
 
+        let compact = notchRect.insetBy(dx: -max(0, compactWingWidth), dy: 0)
+        compactRect = compact.intersection(screen)
+        compactHotZone = compactRect.insetBy(dx: -hotZoneMargin, dy: -hotZoneMargin)
+
         // Never smaller than the notch, never wider or taller than the screen.
         let width = min(max(openSize.width, notchWidth), screen.width)
         let height = min(max(openSize.height, metrics.notchHeight), screen.height)
@@ -53,11 +61,12 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
         openRect = CGRect(x: x, y: screen.maxY - height, width: width, height: height)
 
         let padding = Self.shadowPadding
+        let content = openRect.union(compactRect)
         panelFrame = CGRect(
-            x: openRect.minX - padding,
-            y: openRect.minY - padding,
-            width: openRect.width + padding * 2,
-            height: openRect.height + padding
+            x: content.minX - padding,
+            y: content.minY - padding,
+            width: content.width + padding * 2,
+            height: content.height + padding
         ).intersection(screen)
     }
 

@@ -46,3 +46,48 @@ the README).
 - [ ] **Restore Defaults…** asks for confirmation first, then resets everything.
 - [ ] Quit and relaunch: your settings are kept.
 - [ ] ⌘W closes the Settings window.
+
+---
+
+## Phase 2: Pomodoro and the compact notch
+
+**Tip:** for quick testing, set Focus and Short break to 1 minute in Settings → Pomodoro.
+Restore them afterwards.
+
+### The Pomodoro tab
+- [ ] Hover the notch and pick the timer tab. It shows a ring with `25:00`, "Focus", "Ready", four
+      empty dots, and "Today: 0 sessions".
+- [ ] **Start:** the ring fills and the time counts down every second. The button becomes Pause.
+- [ ] **Pause:** the countdown stops and "Paused" appears. **Resume** continues from the same
+      time.
+- [ ] **Skip:** jumps to the break (no sound) and fills one dot.
+- [ ] **Reset:** back to `25:00` Focus with empty dots.
+
+### The compact notch (live activity)
+- [ ] While a timer runs, the closed notch shows a small ring on the left and the time on the
+      right. The wings line up flush with the notch.
+- [ ] While paused, the ring shows a pause symbol and the time turns grey.
+- [ ] Hovering either wing opens the notch straight to the timer tab.
+- [ ] After Reset, the wings disappear.
+- [ ] Turning off Settings → Pomodoro → "Show the timer beside the notch" hides the wings.
+- [ ] Settings → Size → "Live activity width" changes how wide the wings are.
+
+### When a phase ends
+- [ ] The first Start asks for notification permission. Allow it.
+- [ ] At the end of a focus session:
+  - [ ] the chosen sound plays
+  - [ ] a notification appears ("Focus session complete…")
+  - [ ] the break starts by itself (default)
+  - [ ] a dot fills
+  - [ ] "Today" goes up by one
+- [ ] At the end of a break, the next focus waits for Start (default).
+- [ ] After the 4th focus session comes a long break (blue), with all four dots filled.
+- [ ] The auto-start toggles in Settings change both behaviors.
+- [ ] Picking a sound in Settings plays a preview. Turning "Play a sound" off silences the end
+      of a phase.
+
+### Robustness
+- [ ] Put the Mac to sleep mid-session for longer than the time left. On wake, the phase has
+      finished and the next one has started from the wake time.
+- [ ] Quit EasyNotch mid-session and reopen it: the timer is still running with the correct time.
+- [ ] Changing the focus length mid-session doesn't change the running timer, only the next one.

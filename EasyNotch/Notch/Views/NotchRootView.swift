@@ -1,42 +1,72 @@
 import SwiftUI
 
 /// Everything drawn inside the notch window: the black notch shape, sized and animated for
-/// the current state, with the expanded content on top when open.
+/// what's showing (closed, compact with a live activity, or open), with that state's content
+/// on top.
 struct NotchRootView: View {
     let viewModel: NotchViewModel
 
-    private var isOpen: Bool { viewModel.state == .open }
-
     var body: some View {
         let geometry = viewModel.geometry
-        let rect = geometry.localRect(isOpen ? geometry.openRect : geometry.notchRect)
-        // Closed: no ears, and bottom corners rounder than the hardware notch's, so the shape
-        // stays completely hidden inside the notch cutout.
-        let ear: CGFloat = isOpen ? 10 : 0
-        let corner: CGFloat = isOpen ? 24 : 12
+        let presentation = viewModel.presentation
+        let style = NotchShapeLayout(presentation, geometry: geometry)
+        let rect = geometry.localRect(style.rect)
 
         ZStack(alignment: .top) {
-            NotchShape(topRadius: ear, bottomRadius: corner)
+            NotchShape(topRadius: style.ear, bottomRadius: style.corner)
                 .fill(.black)
-                .frame(width: rect.width + ear * 2, height: rect.height)
-                .shadow(color: .black.opacity(isOpen ? 0.45 : 0), radius: 12, y: 6)
+                .frame(width: rect.width + style.ear * 2, height: rect.height)
+                .shadow(color: .black.opacity(presentation == .open ? 0.45 : 0), radius: 12, y: 6)
 
-            if isOpen {
+            switch presentation {
+            case .open:
                 ExpandedView(viewModel: viewModel)
                     .frame(width: rect.width, height: rect.height)
-                    .transition(.asymmetric(
-                        insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.08)),
-                        removal: .opacity.animation(.easeIn(duration: 0.1))
-                    ))
+                    .transition(contentTransition)
+            case let .compact(activity):
+                CompactView(activity: activity, notchWidth: geometry.notchRect.width)
+                    .frame(width: rect.width, height: rect.height)
+                    .transition(contentTransition)
+            case .closed:
+                EmptyView()
             }
         }
         .position(x: rect.midX, y: rect.midY)
         .frame(width: geometry.panelFrame.width, height: geometry.panelFrame.height)
         // Closing uses a quicker, less bouncy spring than opening, so it gets out of the way.
         .animation(
-            isOpen ? .spring(response: 0.38, dampingFraction: 0.8) : .spring(response: 0.28, dampingFraction: 0.9),
-            value: isOpen
+            presentation == .open
+                ? .spring(response: 0.38, dampingFraction: 0.8)
+                : .spring(response: 0.28, dampingFraction: 0.9),
+            value: presentation
         )
         .environment(\.colorScheme, .dark)
+    }
+
+    private var contentTransition: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.08)),
+            removal: .opacity.animation(.easeIn(duration: 0.1))
+        )
+    }
+}
+
+/// The shape's size and corner rounding for each presentation.
+private struct NotchShapeLayout {
+    let rect: CGRect
+    let ear: CGFloat
+    let corner: CGFloat
+
+    init(_ presentation: NotchPresentation, geometry: NotchGeometry) {
+        switch presentation {
+        case .closed:
+            // No ears, and bottom corners rounder than the hardware notch's, so the shape stays
+            // completely hidden inside the notch cutout.
+            (rect, ear, corner) = (geometry.notchRect, 0, 12)
+        case .compact:
+            (rect, ear, corner) = (geometry.compactRect, 6, 12)
+        case .open:
+            (rect, ear, corner) = (geometry.openRect, 10, 24)
+        }
     }
 }

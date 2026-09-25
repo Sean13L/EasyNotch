@@ -14,9 +14,10 @@ struct NotchGeometryTests {
     static func geometry(
         _ metrics: ScreenMetrics = builtIn,
         open: CGSize = CGSize(width: 640, height: 200),
+        wings: CGFloat = 64,
         margin: CGFloat = 8
     ) -> NotchGeometry? {
-        NotchGeometry(metrics: metrics, openSize: open, hotZoneMargin: margin)
+        NotchGeometry(metrics: metrics, openSize: open, compactWingWidth: wings, hotZoneMargin: margin)
     }
 
     @Test func notchMatchesRealHardware() throws {
@@ -48,6 +49,19 @@ struct NotchGeometryTests {
         let g = try #require(Self.geometry())
         #expect(g.localRect(g.notchRect) == CGRect(x: 251.5, y: 0, width: 185, height: 32))
         #expect(g.localRect(g.openRect) == CGRect(x: 24, y: 0, width: 640, height: 200))
+    }
+
+    @Test func compactRectAddsWingsBesideTheNotch() throws {
+        let g = try #require(Self.geometry())
+        #expect(g.compactRect == CGRect(x: 599.5, y: 950, width: 313, height: 32))
+        #expect(g.compactHotZone.contains(CGPoint(x: 610, y: 970)))  // left wing
+        #expect(!g.hotZone.contains(CGPoint(x: 610, y: 970)))        // not part of the plain notch
+    }
+
+    @Test func panelFitsWideWingsEvenWithANarrowOpenSize() throws {
+        let g = try #require(Self.geometry(open: CGSize(width: 200, height: 120), wings: 120))
+        #expect(g.panelFrame.contains(g.compactRect))
+        #expect(g.panelFrame.contains(g.openRect))
     }
 
     @Test func screenWithoutNotchHasNoGeometry() {

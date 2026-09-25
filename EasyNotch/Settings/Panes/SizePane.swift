@@ -20,6 +20,17 @@ struct SizePane: View {
             } footer: {
                 Text("The notch stays open while this pane is showing, so you can watch it change.")
             }
+
+            Section {
+                SettingSlider(
+                    title: "Live activity width",
+                    value: $settings.compactWingWidth, setting: .compactWingWidth, step: 2, unit: .points
+                )
+            } header: {
+                Text("Closed notch")
+            } footer: {
+                Text("How far the closed notch widens on each side to show things like a running timer.")
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("Size")

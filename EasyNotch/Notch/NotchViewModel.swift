@@ -17,6 +17,9 @@ final class NotchViewModel {
     /// pane uses this so you can watch the notch change as you drag the sliders.
     private(set) var isPinnedOpen = false
 
+    /// Which live activity (if any) should show beside the closed notch. Set by `AppServices`,
+    /// so the notch never needs to know about individual features.
+    @ObservationIgnored var liveActivityProvider: () -> LiveActivity? = { nil }
     /// Called after every state change; the window controller uses it to toggle click-through.
     @ObservationIgnored var onStateChange: ((NotchState) -> Void)?
     /// Called when the gear button is pressed.
@@ -35,11 +38,20 @@ final class NotchViewModel {
         self.geometry = geometry
     }
 
+    var liveActivity: LiveActivity? { liveActivityProvider() }
+
+    var presentation: NotchPresentation {
+        if state == .open { return .open }
+        if let liveActivity { return .compact(liveActivity) }
+        return .closed
+    }
+
     func pointerMoved(to point: CGPoint) {
         guard !isPinnedOpen else { return }
         switch state {
         case .closed:
-            if geometry.hotZone.contains(point) {
+            let hotZone = liveActivity == nil ? geometry.hotZone : geometry.compactHotZone
+            if hotZone.contains(point) {
                 schedule(.open, after: settings.hoverDelay)
             } else {
                 cancelPendingTransition()
@@ -105,6 +117,10 @@ final class NotchViewModel {
     private func setState(_ newState: NotchState) {
         guard newState != state else { return }
         state = newState
+        // Opening from a live activity shows that activity's tab, like tapping the Dynamic Island.
+        if newState == .open, !isPinnedOpen, let liveActivity {
+            selectedModule = liveActivity.module
+        }
         Log.notch.debug("Notch \(String(describing: newState), privacy: .public)")
         if newState == .open, settings.hapticsEnabled, !isPinnedOpen {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)

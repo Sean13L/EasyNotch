@@ -16,8 +16,10 @@ sentence or two, and prefer simple, readable code over clever code.
 - **Phase 1 (notch shell): done.** Hover open/close, tabs with placeholders, and a Settings
   window (Behavior and Size panes, live size preview). 26 tests pass; the owner walked through
   the QA checklist.
-- **Now:** Phase 2, Pomodoro. It also brings the compact "live activity" state, deferred from
-  Phase 1.
+- **Phase 2 (Pomodoro + compact live activity): done, but the owner hasn't hands-on tested
+  it yet.** The owner was away; Claude verified it with unit tests (47) and Debug-flag runs.
+  The owner should walk through `docs/QA_CHECKLIST.md` Phase 2.
+- **Now:** Phase 3, music (Spotify and Apple Music). The owner said to proceed without asking.
 - **Signing:** ad-hoc for now (there's no Apple ID in Xcode yet). Switch to an Apple
   Development identity before Phase 3.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
@@ -37,7 +39,12 @@ xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -configuration Debug -
 xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -derivedDataPath build test
 killall EasyNotch; open build/Build/Products/Debug/EasyNotch.app
 open build/Build/Products/Debug/EasyNotch.app --args -OpenSettingsOnLaunch YES   # Debug only: opens Settings at launch
+# Debug only: start a 1-minute timer without saving any settings (launch args override UserDefaults for one run)
+open build/Build/Products/Debug/EasyNotch.app --args -StartPomodoroOnLaunch YES -pomodoro.focusMinutes 1 -pomodoro.notifications NO
 ```
+Test runs write real timer state; clean up with
+`defaults delete com.seanl.easynotch pomodoro.engine` (plus `pomodoro.statsDay` and
+`pomodoro.sessionsOnStatsDay`).
 
 ## Architecture rules
 - **Stack:**
@@ -76,6 +83,12 @@ open build/Build/Products/Debug/EasyNotch.app --args -OpenSettingsOnLaunch YES  
 - **The screen-control tool can't grant EasyNotch while it runs from `build/`,** and its
   screenshots black out EasyNotch's windows. Verify behavior through `.debug` logs, and leave the
   visual checks to the owner.
+- **zsh doesn't word-split unquoted variables.** `open … --args $ARGS` passes a single
+  argument. Write the arguments inline, or use `${=ARGS}`.
+- **Always pass a `tolerance` to long `Task.sleep` calls** that must fire on time. Without one,
+  macOS woke a 60 s sleep about 4 s late.
+- **Pomodoro holds a `ProcessInfo` activity while running,** so App Nap doesn't throttle the
+  countdown.
 - **Idle CPU must stay near 0%.** No always-running timers or polling; stay event-driven.
 - **zsh has a built-in `log` command.** Call Apple's tool as `/usr/bin/log show|stream`.
   Only `.notice` and higher are saved to the log; `.info` and `.debug` appear only in a live

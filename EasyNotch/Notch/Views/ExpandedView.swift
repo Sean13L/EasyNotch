@@ -37,8 +37,13 @@ struct ExpandedView: View {
             .frame(height: notch.height)
             .padding(.horizontal, 16)
 
-            ModulePlaceholder(module: viewModel.selectedModule)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Group {
+                switch viewModel.selectedModule {
+                case .pomodoro: PomodoroView()
+                case .music, .shelf: ModulePlaceholder(module: viewModel.selectedModule)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(.white)
     }
@@ -67,9 +72,8 @@ private struct ModulePlaceholder: View {
 
     private var phase: Int {
         switch module {
-        case .pomodoro: 2
         case .music: 3
-        case .shelf: 4
+        case .shelf, .pomodoro: 4
         }
     }
 
