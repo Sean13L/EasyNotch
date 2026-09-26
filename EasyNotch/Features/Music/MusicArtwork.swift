@@ -23,7 +23,8 @@ struct MusicArtwork: View {
 }
 
 extension MediaPlayer {
-    /// The app's brand color, used for the "playing" indicator.
+    /// The app's brand color: shuffle and repeat while they're on, and the audio bars when
+    /// there's no cover art.
     var accentColor: Color {
         switch self {
         case .spotify: Color(red: 0.12, green: 0.84, blue: 0.38)

@@ -131,6 +131,10 @@ every rebuild.
 - [ ] Dragging the progress bar seeks.
 - [ ] The volume slider changes the app's volume.
 - [ ] Shuffle toggles. Repeat cycles off → all → one (Music) or on/off (Spotify).
+- [ ] While on, shuffle and repeat are green in Spotify and red in Music; while off, they're
+      grey.
+- [ ] The bars beside the notch take the main color of the cover, and change when the track
+      does. A dark cover still gives bright bars, and a black-and-white one gives light grey.
 - [ ] The app icon (top right) opens the player.
 
 - [ ] Pause the music. The wings stay up with the cover art and resting bars for the time set

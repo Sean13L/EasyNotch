@@ -62,6 +62,7 @@ final class NotchWindowController {
     /// Hides the notch while an app on this screen is full screen (if that option is on).
     func setHiddenForFullScreen(_ hidden: Bool) {
         guard hidden != isHiddenForFullScreen else { return }
+        Log.notch.notice("\(hidden ? "Hidden over a full-screen app" : "Shown again after full screen", privacy: .public)")
         isHiddenForFullScreen = hidden
         if hidden {
             viewModel.close()

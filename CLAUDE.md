@@ -20,6 +20,9 @@ sentence or two, and prefer simple, readable code over clever code.
   The script builds unsigned first; re-signing left the old certificate's bytes in the binary.
   The v1.0.0 zip was rebuilt cleanly and replaced on GitHub. Commits use the owner's GitHub
   noreply email.
+- **v1.1.1 (built, not published):** the sound bars take the album cover's color
+  (`ArtworkColor`), shuffle and repeat show in the player's color, and the cover no longer
+  flashes between tracks. Publish only when the owner says "publish".
 - **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
   Releasing.
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).

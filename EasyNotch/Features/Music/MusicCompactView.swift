@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// What's playing, beside the closed notch: cover art on the left wing and bouncing audio bars
-/// in the player's color on the right one.
+/// in the cover's color on the right one (the player's color until the cover has loaded).
 struct MusicCompactView: View {
     enum Side {
         case leading
@@ -20,8 +20,11 @@ struct MusicCompactView: View {
                     .frame(maxWidth: 22, maxHeight: 22)
                     .aspectRatio(1, contentMode: .fit)  // shrinks in narrow wings
             case .trailing:
-                AudioBars(isPlaying: source.snapshot?.isPlaying == true, color: source.player.accentColor)
-                    .frame(maxWidth: 22, maxHeight: 14)
+                AudioBars(
+                    isPlaying: source.snapshot?.isPlaying == true,
+                    color: source.artworkColor.map { Color(nsColor: $0) } ?? source.player.accentColor
+                )
+                .frame(maxWidth: 22, maxHeight: 14)
             }
         }
     }

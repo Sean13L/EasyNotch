@@ -14,6 +14,10 @@ final class AppServices {
     private let hotKey = HotKeyCenter()
     private let screenManager: ScreenManager
     private let settingsWindow: SettingsWindowController
+    #if DEBUG
+    /// Development only: what `watchLiveActivity` last logged.
+    private var loggedActivity: String?
+    #endif
 
     init() {
         pomodoro = PomodoroController(settings: settings)
@@ -67,11 +71,35 @@ final class AppServices {
         system.activate()
         screenManager.start()
         watchShortcut()
+        #if DEBUG
+        watchLiveActivity()
+        #endif
     }
 
     func showSettings() {
         settingsWindow.show()
     }
+
+    #if DEBUG
+    /// Development only: logs every change to what shows beside the notch, with the music
+    /// state at that moment, to track down wings that disappear.
+    /// `/usr/bin/log stream --level debug --predicate 'subsystem == "com.seanl.easynotch"'`
+    private func watchLiveActivity() {
+        let activity = withObservationTracking {
+            screenManager.liveActivityProvider()
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in self?.watchLiveActivity() }
+        }
+        let active = nowPlaying.active
+        let description = "\(activity.map { "\($0)" } ?? "nothing")"
+            + " (music: \(active?.player.displayName ?? "no player"),"
+            + " running \(active?.isRunning == true), track \(active?.snapshot != nil),"
+            + " playing \(nowPlaying.isPlaying), paused linger \(nowPlaying.showsPausedTrack))"
+        guard description != loggedActivity else { return }
+        loggedActivity = description
+        Log.notch.debug("Beside the notch: \(description, privacy: .public)")
+    }
+    #endif
 
     /// Registers the keyboard shortcut, and again whenever it changes. It's paused while
     /// Settings records a new one.

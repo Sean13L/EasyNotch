@@ -275,14 +275,19 @@ folder.
   in every script, and turns error codes into clear states. For example, `-1743` (not
   authorized) shows an "Open System Settings" button.
 - **Compact view.** Album art in the left wing, and four bouncing equalizer bars in the
-  player's color in the right. The bars run on Core Animation, so they cost no app CPU, and each
-  follows its own pattern and speed. They're decorative; real audio levels would need the Screen
+  cover's color in the right. The bars run on Core Animation, so they cost no app CPU, and each
+  follows its own pattern and speed.
+  - **The cover's color (`ArtworkColor`, tested)** is the most prominent vivid hue, not the
+    average, which comes out muddy. It's computed once per cover (about 1–5 ms), brightened
+    if too dark to see on black, and light grey for a black-and-white cover. Until the cover
+    loads, the bars use the player's brand color. They're decorative; real audio levels would need the Screen
   Recording permission, which isn't worth it. A running Pomodoro takes priority over music for
   the wings.
 - **Paused music lingers.** After a track that was playing is paused, its wings stay up
   (bars at rest) for a duration you choose (`PausedTrackLinger`, tested), then hide.
 - **Layout.** Shuffle · previous · play · next · repeat sit centered under the progress bar.
-  Volume sits in the header row.
+  Volume sits in the header row. While on, shuffle and repeat show in the player's brand
+  color: Spotify green or Apple Music red.
 - **Expanded view.** Artwork, title, artist, album, scrubber, previous/play/next, volume,
   shuffle/repeat, "open in app", and a player switcher.
 - **Why not every player (browsers, Podcasts, and so on).** That needs Apple's private

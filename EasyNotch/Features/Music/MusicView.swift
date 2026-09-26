@@ -126,9 +126,10 @@ private struct TransportControls: View {
             // Shuffle and repeat keep their slots even when unavailable (before permission is
             // granted), so the play button always sits exactly in the middle.
             ToggleSlot(isAvailable: snapshot.shuffle != nil) {
-                ControlButton(systemImage: "shuffle", help: "Shuffle", isOn: snapshot.shuffle) {
-                    send(.toggleShuffle)
-                }
+                ControlButton(
+                    systemImage: "shuffle", help: "Shuffle",
+                    isOn: snapshot.shuffle, onColor: source.player.accentColor
+                ) { send(.toggleShuffle) }
             }
             ControlButton(systemImage: "backward.fill", help: "Previous") { send(.previous) }
             Button { send(.playPause) } label: {
@@ -146,7 +147,8 @@ private struct TransportControls: View {
                 ControlButton(
                     systemImage: snapshot.repeatMode == .one ? "repeat.1" : "repeat",
                     help: "Repeat",
-                    isOn: snapshot.repeatMode.map { $0 != .off }
+                    isOn: snapshot.repeatMode.map { $0 != .off },
+                    onColor: source.player.accentColor
                 ) { send(.cycleRepeat) }
             }
         }
@@ -203,14 +205,25 @@ private struct VolumeSlider: View {
 private struct ControlButton: View {
     let systemImage: String
     let help: String
+    /// For toggles (shuffle, repeat): whether it's on. `nil` for plain buttons.
     var isOn: Bool?
+    /// The color while on, like the player app itself shows it.
+    var onColor: Color = .primary
     let action: () -> Void
+
+    private var style: AnyShapeStyle {
+        switch isOn {
+        case true?: AnyShapeStyle(onColor)
+        case false?: AnyShapeStyle(.secondary)
+        case nil: AnyShapeStyle(.primary)
+        }
+    }
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isOn == false ? .secondary : .primary)
+                .foregroundStyle(style)
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }

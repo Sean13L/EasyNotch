@@ -16,7 +16,11 @@ final class MediaPlayerSource {
 
     private(set) var isRunning = false
     private(set) var snapshot: PlayerSnapshot?
-    private(set) var artwork: NSImage?
+    private(set) var artwork: NSImage? {
+        didSet { artworkColor = artwork.flatMap(ArtworkColor.color(of:)) }
+    }
+    /// The standout color of the cover art, for the audio bars (see `ArtworkColor`).
+    private(set) var artworkColor: NSColor?
     private(set) var permission: AutomationPermission = .unknown
     /// When this player last started playing or changed track; used to pick which player to show.
     private(set) var lastActivity: Date = .distantPast
@@ -78,6 +82,9 @@ final class MediaPlayerSource {
         let parse = profile.parseState
         do {
             let fresh = try await runner.run(profile.stateScript) { parse($0, now) }
+            if fresh == nil {
+                Log.music.debug("\(self.player.displayName, privacy: .public) state: stopped or unreadable")
+            }
             apply(fresh)
         } catch {
             handle(error)
@@ -203,8 +210,18 @@ final class MediaPlayerSource {
         guard self.snapshot?.trackID == trackID else { return }
         if image != nil || isFinal {
             artworkTrackID = trackID
+            artwork = image
+            Log.music.debug("\(self.player.displayName, privacy: .public) cover: \(image == nil ? "none" : "loaded", privacy: .public)")
+        } else if permission == .granted {
+            // A track change arrives first as a notification without the cover's link, and
+            // the refresh that follows brings it a moment later. Keep the previous cover up
+            // until then, so the wings don't flash the placeholder (and the bars their
+            // fallback color) between tracks.
+            Log.music.debug("\(self.player.displayName, privacy: .public) cover: keeping the previous one until details arrive")
+        } else {
+            // Without permission, no more details are coming.
+            artwork = nil
         }
-        artwork = image
     }
 
     private func handle(_ error: Error) {
@@ -212,6 +229,7 @@ final class MediaPlayerSource {
         case .notAuthorized:
             permission = .denied
         case .playerNotRunning:
+            Log.music.notice("\(self.player.displayName, privacy: .public) didn't answer; treating it as quit")
             isRunning = false
             apply(nil)
         default:
