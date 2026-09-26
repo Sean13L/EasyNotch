@@ -12,18 +12,16 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.0.0: published** at github.com/Sean13L/EasyNotch (Phases 0–6). Commits use the owner's
-  GitHub noreply email.
+- **v1.1.0: published** at github.com/Sean13L/EasyNotch (2026-09-26). It added three tabs:
+  Calendar, Battery, and System (BLUEPRINT §6.5–6.8). 135 tests pass; idle CPU is 0% and memory
+  is 40 MB. v1.0.0 (Phases 0–6) came before it.
 - **Releases are signed** by the owner's self-signed "EasyNotch Developer" certificate via
   `scripts/release.sh`, never the Apple Development one (its name contains the owner's email).
-- **Now: v1.1.0 (BLUEPRINT §6.5–6.8).**
-  - **Built:** three new tabs (Calendar, Battery, System), their settings panes and live
-    activities, the split tab bar, and the live-activity priorities. 135 tests pass. Idle CPU
-    is 0%; the System tab costs about 0.8% while open.
-  - **The owner tested it (2026-09-26):** everything works. The release zip is built with
-    `scripts/release.sh`, and the app is installed in /Applications.
-  - **Not published yet.** Tag v1.1.0, push, and create the GitHub release only when the owner
-    says "publish".
+  The script builds unsigned first; re-signing left the old certificate's bytes in the binary.
+  The v1.0.0 zip was rebuilt cleanly and replaced on GitHub. Commits use the owner's GitHub
+  noreply email.
+- **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
+  Releasing.
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).
 - Roadmap: `docs/BLUEPRINT.md` §12. Update this section whenever a phase finishes.
 
