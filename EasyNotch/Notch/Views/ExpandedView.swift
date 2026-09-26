@@ -14,8 +14,8 @@ struct ExpandedView: View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 HStack(spacing: 4) {
-                    ForEach(NotchModule.allCases) { module in
-                        TabButton(module: module, isSelected: module == viewModel.selectedModule) {
+                    ForEach(viewModel.visibleModules) { module in
+                        TabButton(module: module, isSelected: module == viewModel.currentModule) {
                             viewModel.selectedModule = module
                         }
                     }
@@ -40,7 +40,7 @@ struct ExpandedView: View {
             .padding(.horizontal, 16)
 
             Group {
-                switch viewModel.selectedModule {
+                switch viewModel.currentModule {
                 case .music: MusicView()
                 case .pomodoro: PomodoroView()
                 case .shelf: ShelfView()
@@ -52,13 +52,14 @@ struct ExpandedView: View {
         // The whole open notch is a drop target, so you don't have to aim for the shelf.
         .dropDestination(for: URL.self) { urls, _ in
             let files = urls.filter(\.isFileURL)
-            guard !files.isEmpty else { return false }
+            guard !files.isEmpty, viewModel.visibleModules.contains(.shelf) else { return false }
             shelf.add(files)
             viewModel.selectedModule = .shelf
             return true
         } isTargeted: { isTargeted in
-            shelf.isDropTargeted = isTargeted
-            if isTargeted { viewModel.selectedModule = .shelf }
+            let shelfIsOn = viewModel.visibleModules.contains(.shelf)
+            shelf.isDropTargeted = isTargeted && shelfIsOn
+            if isTargeted, shelfIsOn { viewModel.selectedModule = .shelf }
         }
     }
 }
@@ -68,11 +69,19 @@ private struct TabButton: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.notchAccent) private var accent
+    @Environment(\.hasCustomNotchAccent) private var hasCustomAccent
+
+    /// Soft white by default, as always; tinted when you pick an accent color.
+    private var highlight: Color {
+        hasCustomAccent ? accent.opacity(0.45) : .white.opacity(0.18)
+    }
+
     var body: some View {
         Button(action: action) {
             Image(systemName: module.systemImage)
                 .frame(width: 32, height: 24)
-                .background(isSelected ? .white.opacity(0.18) : .clear, in: Capsule())
+                .background(isSelected ? highlight : .clear, in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

@@ -2,8 +2,12 @@ import SwiftUI
 
 /// The groups of settings shown in the sidebar.
 enum SettingsPane: String, CaseIterable, Identifiable {
+    case general
     case behavior
+    case appearance
     case size
+    case displays
+    case modules
     case music
     case shelf
     case pomodoro
@@ -12,8 +16,12 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .general: "General"
         case .behavior: "Behavior"
+        case .appearance: "Appearance"
         case .size: "Size"
+        case .displays: "Displays"
+        case .modules: "Modules"
         case .music: "Music"
         case .shelf: "Shelf"
         case .pomodoro: "Pomodoro"
@@ -22,8 +30,12 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .general: "gearshape"
         case .behavior: "cursorarrow.motionlines"
+        case .appearance: "paintpalette"
         case .size: "arrow.up.left.and.arrow.down.right"
+        case .displays: "display.2"
+        case .modules: "square.grid.2x2"
         case .music: "music.note"
         case .shelf: "tray.full"
         case .pomodoro: "timer"
@@ -40,10 +52,10 @@ struct SettingsView: View {
     /// Reports which notch shape the Size pane wants to preview.
     let onSizePreviewChange: (SizePreview) -> Void
 
-    @State private var selection: SettingsPane? = .behavior
+    @State private var selection: SettingsPane? = .general
     @State private var isConfirmingReset = false
 
-    private var pane: SettingsPane { selection ?? .behavior }
+    private var pane: SettingsPane { selection ?? .general }
 
     var body: some View {
         NavigationSplitView {
@@ -59,14 +71,18 @@ struct SettingsView: View {
             }
         } detail: {
             switch pane {
+            case .general: GeneralPane(settings: settings)
             case .behavior: BehaviorPane(settings: settings)
+            case .appearance: AppearancePane(settings: settings)
+            case .displays: DisplaysPane(settings: settings)
+            case .modules: ModulesPane(settings: settings)
             case .size: SizePane(settings: settings, onPreviewChange: onSizePreviewChange)
             case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
             case .shelf: ShelfPane(settings: settings)
             case .pomodoro: PomodoroPane(settings: settings)
             }
         }
-        .frame(minWidth: 600, minHeight: 380)
+        .frame(minWidth: 640, minHeight: 440)
         .onChange(of: pane, initial: true) { _, newPane in
             onPaneChange(newPane)
         }

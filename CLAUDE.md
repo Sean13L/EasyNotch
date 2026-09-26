@@ -24,8 +24,15 @@ sentence or two, and prefer simple, readable code over clever code.
 - **Phase 4 (shelf + AirDrop): done.** 94 tests pass, and the owner tested drag in and out,
   AirDrop, Share, and Quick Look. Decided: keep links and ask once for Downloads, Desktop, and
   Documents. That macOS prompt is expected.
-- **Every feature from the original request is built.** Next: Phase 5 (customization depth),
-  then Phase 6 (polish and a GitHub release).
+- **Every feature from the original request is built.**
+- **Phase 5 (customization): committed.** 112 tests pass.
+  - **Verified:** full-screen hiding (Claude, live), animation presets and tab reorder arrows
+    (owner).
+  - **After owner feedback:** the "System" accent now uses the real macOS accent, and tabs can
+    be reordered by dragging rows.
+  - **Owner hasn't confirmed yet:** those two fixes, the shortcut, launch at login, the
+    virtual notch on an external monitor, click mode, and the right-click menu.
+- **Next:** Phase 6 (polish and a GitHub release). Also trim this file below about 100 lines.
 - **Signing:** Apple Development, owner's Personal Team `Y4Q9CP9K8V`. If a build ever says a
   certificate or profile is missing, add `-allowProvisioningUpdates`.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
@@ -107,6 +114,14 @@ Test runs write real timer state; clean up with
   and the list of types (see `FileDragDetector`), so no privacy prompt appears.
 - **Present system UI (AirDrop, Quick Look) only after `NSApp.activate()`.** The notch panel
   can't become key.
+- **Full-screen hiding uses undocumented `CGS*` functions** (D13), looked up with `dlsym` in
+  `FullScreenDetector`. Never call them directly, and keep the graceful fallback.
+- **`AppSettings.isRecordingShortcut` is a transient, unsaved flag.** It pauses the global hot
+  key while the recorder listens.
+- **SwiftUI's `.onMove` does nothing inside a `Form` on macOS.** Reorder with
+  `.draggable` / `.dropDestination` on each row (see `ModulesPane`).
+- **For the system accent, use `Color(nsColor: .controlAccentColor)`.** SwiftUI's
+  `.accentColor` came out grey.
 - **Features never reference each other.** Helpers shared between features go in `Shared/`
   (e.g. `SecondsTimeline`).
 - **Continuous decorative motion uses Core Animation layers, not SwiftUI.** See `AudioBars`:
@@ -128,7 +143,8 @@ Test runs write real timer state; clean up with
 - Tests use Swift Testing (`import Testing`, `@Test`). New logic ships with tests.
 - Log with `os.Logger` (`Log.notch`, `Log.music`, …). Never use `print`.
 - Each new user-facing option goes into `AppSettings` with a default, plus a control in its
-  settings pane.
+  settings pane. Also add it to its type's `.all` registry and to `reload()`; export, import,
+  and reset depend on both. `SettingsTransferTests` checks the registry count.
 - **Before calling a phase done:**
   1. The build and tests pass.
   2. Walk through `docs/QA_CHECKLIST.md`.

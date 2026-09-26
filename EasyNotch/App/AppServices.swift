@@ -1,3 +1,5 @@
+import Observation
+
 /// Creates and owns the app's long-lived objects. Each is made once, here, and handed to
 /// whatever needs it, so there are no hidden singletons.
 final class AppServices {
@@ -6,6 +8,7 @@ final class AppServices {
     let nowPlaying: NowPlayingService
     let shelf: ShelfStore
     private let mouseTracker = MouseTracker()
+    private let hotKey = HotKeyCenter()
     private let screenManager: ScreenManager
     private let settingsWindow: SettingsWindowController
 
@@ -25,14 +28,18 @@ final class AppServices {
         settingsWindow.onPreviewChange = { [weak self] preview in
             self?.screenManager.setPreview(preview)
         }
-        // What appears beside the closed notch.
+        hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
+
+        // What appears beside the closed notch. A tab that's turned off shows nothing.
         screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying] in
-            let showTimer = settings.pomodoroInNotch && pomodoro.engine.isActive
+            let visible = NotchModule.visible(order: settings.moduleOrder, hidden: settings.hiddenModules)
+            let showTimer = settings.pomodoroInNotch && visible.contains(.pomodoro) && pomodoro.engine.isActive
+            let showMusic = settings.musicInNotch && visible.contains(.music)
             return LiveActivity.resolve(
                 timerRunning: showTimer && pomodoro.engine.isRunning,
                 timerPaused: showTimer && !pomodoro.engine.isRunning,
-                musicPlaying: settings.musicInNotch && nowPlaying.isPlaying,
-                musicRecentlyPaused: settings.musicInNotch && nowPlaying.showsPausedTrack
+                musicPlaying: showMusic && nowPlaying.isPlaying,
+                musicRecentlyPaused: showMusic && nowPlaying.showsPausedTrack
             )
         }
     }
@@ -41,9 +48,28 @@ final class AppServices {
         pomodoro.activate()
         nowPlaying.activate()
         screenManager.start()
+        watchShortcut()
     }
 
     func showSettings() {
         settingsWindow.show()
+    }
+
+    /// Registers the keyboard shortcut, and again whenever it changes. It's paused while
+    /// Settings records a new one.
+    private func watchShortcut() {
+        withObservationTracking {
+            if settings.isRecordingShortcut {
+                hotKey.unregister()
+            } else {
+                hotKey.register(
+                    keyCode: Int(settings.shortcutKeyCode),
+                    carbonModifiers: Int(settings.shortcutModifiers)
+                )
+            }
+        } onChange: { [weak self] in
+            // onChange fires just before the new value is stored; look on the next main-loop turn.
+            Task { @MainActor [weak self] in self?.watchShortcut() }
+        }
     }
 }

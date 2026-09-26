@@ -64,6 +64,18 @@ struct NotchGeometryTests {
         #expect(g.panelFrame.contains(g.openRect))
     }
 
+    @Test func aVirtualNotchSitsCenteredOnAScreenWithoutOne() throws {
+        // The owner's external monitor, measured 2026-09-25.
+        let frame = CGRect(x: 1512, y: 109, width: 1920, height: 1080)
+        let metrics = ScreenMetrics.virtual(frame: frame, notchSize: CGSize(width: 190, height: 25))
+        #expect(metrics.leftAreaWidth == 865)
+        #expect(metrics.rightAreaWidth == 865)
+
+        let g = try #require(Self.geometry(metrics))
+        #expect(g.notchRect == CGRect(x: 2377, y: 1164, width: 190, height: 25))
+        #expect(g.openRect.midX == g.notchRect.midX)
+    }
+
     @Test func screenWithoutNotchHasNoGeometry() {
         var metrics = Self.builtIn
         metrics.notchHeight = 0

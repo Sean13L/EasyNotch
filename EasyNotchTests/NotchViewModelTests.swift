@@ -12,10 +12,14 @@ struct NotchViewModelTests {
     let leftWing = CGPoint(x: 610, y: 970)             // beside the notch, inside the compact wings
 
     /// A view model with instant transitions and haptics off.
-    func makeViewModel(_ defaults: UserDefaults, hoverDelay: Double = 0, openOnDrag: Bool = true) -> NotchViewModel {
+    func makeViewModel(
+        _ defaults: UserDefaults, hoverDelay: Double = 0, openOnDrag: Bool = true,
+        configure: (AppSettings) -> Void = { _ in }
+    ) -> NotchViewModel {
         let settings = AppSettings(defaults: defaults)
         settings.hoverDelay = hoverDelay
         settings.shelfOpenOnDrag = openOnDrag
+        configure(settings)
         settings.closeDelay = 0
         settings.hapticsEnabled = false
         let geometry = NotchGeometryTests.geometry()!
@@ -205,6 +209,119 @@ struct NotchViewModelTests {
             let vm = makeViewModel(defaults)
             vm.pointerDragged(to: notchCenter, carryingFiles: true)
             vm.pointerDragged(to: desktop, carryingFiles: true)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    // MARK: - Tabs
+
+    @Test func theOpeningTabFollowsItsPriorities() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults) { $0.defaultModule = "pomodoro" }
+            vm.selectedModule = .music
+
+            vm.pointerMoved(to: notchCenter)
+            #expect(vm.currentModule == .pomodoro)  // the "opens first" setting
+
+            vm.close()
+            vm.liveActivityProvider = { .music }
+            vm.pointerMoved(to: notchCenter)
+            #expect(vm.currentModule == .music)  // a live activity beats the setting
+
+            vm.close()
+            vm.pointerDragged(to: notchCenter, carryingFiles: true)
+            #expect(vm.currentModule == .shelf)  // a file drag beats everything
+        }
+    }
+
+    @Test func lastUsedKeepsTheTabYouPicked() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.selectedModule = .pomodoro
+            vm.pointerMoved(to: notchCenter)
+            #expect(vm.currentModule == .pomodoro)
+        }
+    }
+
+    @Test func aHiddenTabIsNeverShown() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults) {
+                $0.moduleOrder = ["pomodoro", "music", "shelf"]
+                $0.hiddenModules = ["music"]
+            }
+            vm.selectedModule = .music
+            #expect(vm.visibleModules == [.pomodoro, .shelf])
+            #expect(vm.currentModule == .pomodoro)
+        }
+    }
+
+    @Test func withTheShelfHiddenFileDragsDoNotOpenTheNotch() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults) { $0.hiddenModules = ["shelf"] }
+            vm.pointerDragged(to: notchCenter, carryingFiles: true)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    // MARK: - Click mode and right-click
+
+    @Test func inClickModeHoveringDoesNothingButClickingOpens() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults) { $0.openOnClick = true }
+            vm.pointerMoved(to: notchCenter)
+            #expect(vm.state == .closed)
+
+            vm.mouseDown(at: menuBarLeft)
+            #expect(vm.state == .closed)
+
+            vm.mouseDown(at: notchCenter)
+            #expect(vm.state == .open)
+
+            vm.mouseDown(at: desktop)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    @Test func rightClickingTheClosedNotchAsksForItsMenu() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            #expect(vm.rightMouseDown(at: notchCenter))
+            #expect(!vm.rightMouseDown(at: menuBarLeft))
+
+            vm.pointerMoved(to: notchCenter)
+            #expect(!vm.rightMouseDown(at: insideOpenPanel))  // the open notch has its own menus
+            #expect(vm.state == .open)
+            _ = vm.rightMouseDown(at: desktop)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    // MARK: - Keyboard shortcut
+
+    @Test func aShortcutOpenedNotchWaitsForThePointer() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.toggleFromShortcut()
+            #expect(vm.state == .open)
+
+            vm.pointerMoved(to: desktop)
+            #expect(vm.state == .open)  // the pointer hasn't visited yet
+
+            vm.pointerMoved(to: insideOpenPanel)
+            vm.pointerMoved(to: desktop)
+            #expect(vm.state == .closed)  // visited, then left
+        }
+    }
+
+    @Test func theShortcutOrAClickOutsideClosesIt() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.toggleFromShortcut()
+            vm.toggleFromShortcut()
+            #expect(vm.state == .closed)
+
+            vm.toggleFromShortcut()
+            vm.mouseDown(at: desktop)
             #expect(vm.state == .closed)
         }
     }

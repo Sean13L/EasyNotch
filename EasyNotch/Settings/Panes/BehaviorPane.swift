@@ -7,10 +7,16 @@ struct BehaviorPane: View {
     var body: some View {
         Form {
             Section {
+                Picker("Open the notch by", selection: $settings.openOnClick) {
+                    Text("Hovering over it").tag(false)
+                    Text("Clicking it").tag(true)
+                }
+                .pickerStyle(.radioGroup)
                 SettingSlider(
                     title: "Open after hovering for",
                     value: $settings.hoverDelay, setting: .hoverDelay, step: 0.05, unit: .seconds
                 )
+                .disabled(settings.openOnClick)
                 SettingSlider(
                     title: "Close after leaving for",
                     value: $settings.closeDelay, setting: .closeDelay, step: 0.05, unit: .seconds
@@ -22,7 +28,16 @@ struct BehaviorPane: View {
             } header: {
                 Text("Opening and closing")
             } footer: {
-                Text("Short delays feel snappy; longer ones stop the notch opening when you just pass by it.")
+                Text("Short delays feel snappy; longer ones stop the notch opening when you just pass by it. Right-click the closed notch for a menu with Settings and Quit.")
+            }
+
+            Section {
+                Toggle("Hide the notch while an app is full screen", isOn: $settings.hideInFullScreen)
+                    .disabled(!FullScreenDetector.isAvailable)
+            } footer: {
+                Text(FullScreenDetector.isAvailable
+                    ? "Useful for videos and games. It only hides on the screen that's full screen."
+                    : "This version of macOS doesn't let EasyNotch tell when an app is full screen.")
             }
 
             Section {

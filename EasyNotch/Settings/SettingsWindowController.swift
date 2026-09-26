@@ -11,7 +11,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let settings: AppSettings
     private let nowPlaying: NowPlayingService
     private var window: NSWindow?
-    private var selectedPane: SettingsPane = .behavior
+    private var selectedPane: SettingsPane = .general
     private var sizePreview: SizePreview = .expanded
 
     init(settings: AppSettings, nowPlaying: NowPlayingService) {
@@ -62,7 +62,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let window = SettingsWindow(contentViewController: NSHostingController(rootView: view))
         window.title = "EasyNotch Settings"
         window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
-        window.setContentSize(NSSize(width: 640, height: 420))
+        window.setContentSize(NSSize(width: 700, height: 480))
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()

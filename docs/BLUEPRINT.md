@@ -58,6 +58,8 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 | D9 | Storage | **UserDefaults** for settings; **a JSON file** in Application Support for the shelf | The data is small, so no database is needed | SwiftData/Core Data (overkill) |
 | D10 | Dependencies | **No third-party packages** in v1 | Less to learn, and nothing external to break | `KeyboardShortcuts` for a global hotkey may come in Phase 5 |
 | D11 | Testing | **Swift Testing** (`@Test`) for logic, plus a manual QA checklist for the UI | Bugs hide in logic; UI is best checked by looking at it | XCUITest (slow and flaky for overlay windows) |
+| D13 | Full-screen detection | **Undocumented `CGSManagedDisplayGetCurrentSpace` / `CGSSpaceGetType`**, looked up while the app runs | macOS has no public API for this, and window-size guesses can't tell a maximized window from a full-screen one. They're long-stable (yabai and Hammerspoon use them). If they vanish, the option simply does nothing | Window-size heuristics; dropping the option |
+| D14 | Global shortcut | **Carbon `RegisterEventHotKey`** with our own recorder | Works system-wide without the Accessibility permission, and keeps zero dependencies (D10) | The `KeyboardShortcuts` package |
 | D12 | Distribution | **GitHub Releases**: a zipped `.app`, not notarized, with install steps for getting past the "could not verify" warning. Releases are signed with **one stable certificate** | Free. The stable signature matters because macOS ties the Automation permission to it; with ad-hoc signing, every update would make users grant it again | Notarized Developer ID ($99/year; can be added later with no code changes); Mac App Store (needs the sandbox, see D5) |
 
 ---
@@ -374,6 +376,13 @@ the moment it changes, and the notch updates live as you adjust it.
 | Pomodoro | Durations; cycles; auto-start; sounds; notifications |
 | General | Launch at login; global keyboard shortcut (Phase 5); reset to defaults; export and import settings |
 
+**Built in Phase 5:** General (launch at login, keyboard shortcut, export/import), Behavior (open
+by hover or click, hide in full screen, right-click menu), Appearance (animation presets, accent
+color), Displays (built-in / main / all, virtual notch), and Modules (reorder, hide, opening tab).
+**Dropped on purpose:** a blurred background, because the hardware notch is pure black and any
+see-through area would leave a visible seam, and tab text labels, which don't fit beside the
+notch at small sizes.
+
 The Settings window has a sidebar with one pane per group, and **Restore Defaults…** sits at
 the bottom of the sidebar. You can open it from the menu-bar icon, from the gear in the
 expanded notch, or by right-clicking the notch (Phase 5). While the Size pane is showing and the
@@ -441,8 +450,11 @@ EasyNotch/
 │   │   │                     ShelfView, ShelfItemView, FileDragSource
 │   │   └── Pomodoro/         PomodoroEngine, PomodoroController, PomodoroView,
 │   │                         PomodoroCompactView
-│   ├── Settings/             AppSettings, SettingsWindowController, SettingsView, Panes/
-│   ├── Shared/               Log, DesignTokens, extensions
+│   ├── Settings/             AppSettings, SettingsWindowController, SettingsView,
+│   │                         ShortcutRecorder, Panes/ (General, Behavior, Appearance, Size,
+│   │                         Displays, Modules, Music, Shelf, Pomodoro)
+│   ├── Shared/               Log, NotchAccent, HotKeyCenter, FullScreenDetector, LoginItem,
+│   │                         DistributedNotificationObserver, SecondsTimeline, extensions
 │   └── Resources/            Assets.xcassets, Info.plist, EasyNotch.entitlements
 └── EasyNotchTests/           NotchGeometryTests, PomodoroEngineTests, ShelfStoreTests,
                               NowPlayingServiceTests (using fake players)
@@ -499,7 +511,7 @@ Every phase ends the same way:
 | **2. Pomodoro** ✅ | First real module (no permissions, pure logic); also adds the compact live-activity state. Defaults: breaks start automatically, focus waits for Start | The full focus → break → long-break cycle works; pause/skip/reset work; a notification and sound play at the end; timing stays accurate after sleep; the compact ring shows; settings pane; engine unit tests | M |
 | **3. Music** ✅ | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
 | **4. Shelf + AirDrop** ✅ | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
-| **5. Customization** | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
+| **5. Customization** ✅ | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
 | **6. Polish & ship** | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |
 
 **Phase 1 is done when:**

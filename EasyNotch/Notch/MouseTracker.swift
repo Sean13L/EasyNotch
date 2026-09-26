@@ -5,7 +5,10 @@ import AppKit
 /// events needs no permission; only keyboard monitoring would.
 final class MouseTracker {
     var onMove: ((CGPoint) -> Void)?
+    /// A left click.
     var onMouseDown: ((CGPoint) -> Void)?
+    /// A right click (or a Control-click).
+    var onRightMouseDown: ((CGPoint) -> Void)?
     /// The mouse moved with the button held. The flag says whether files are being dragged.
     var onDrag: ((CGPoint, Bool) -> Void)?
 
@@ -46,9 +49,13 @@ final class MouseTracker {
             onMove?(location)
         case .leftMouseDown:
             dragDetector.mouseDown(changeCount: dragPasteboard.changeCount)
-            onMouseDown?(location)
+            if event.modifierFlags.contains(.control) {
+                onRightMouseDown?(location)
+            } else {
+                onMouseDown?(location)
+            }
         case .rightMouseDown:
-            onMouseDown?(location)
+            onRightMouseDown?(location)
         case .leftMouseDragged:
             let pasteboard = dragPasteboard
             let carryingFiles = dragDetector.mouseDragged(

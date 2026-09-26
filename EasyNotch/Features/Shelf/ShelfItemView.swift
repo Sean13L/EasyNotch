@@ -8,6 +8,7 @@ struct ShelfItemView: View {
     let isSelected: Bool
     let thumbnails: ShelfThumbnails
 
+    @Environment(\.notchAccent) private var accent
     @State private var thumbnail: NSImage?
 
     private static let size: CGFloat = 56
@@ -42,7 +43,7 @@ struct ShelfItemView: View {
         .padding(4)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.4) : .clear)
+                .fill(isSelected ? accent.opacity(0.4) : .clear)
         )
         .opacity(url == nil ? 0.45 : 1)
         .contentShape(Rectangle())

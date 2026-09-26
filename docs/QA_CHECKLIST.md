@@ -198,3 +198,59 @@ every rebuild.
       System Settings…" opens that page. Settings → Shelf has the same button.
 - [ ] "Keep at most" limits the number of files (the oldest drop off). "Remove files
       automatically" removes old ones.
+
+---
+
+## Phase 5: Customization
+
+### General
+- [ ] **Open EasyNotch when you log in:** turn it on, restart the Mac, and EasyNotch starts by
+      itself. If macOS asks, allow it in System Settings → General → Login Items; the pane
+      shows a button for that.
+- [ ] **Keyboard shortcut:**
+  - [ ] Click "Record Shortcut" and press e.g. ⌥⌘N. It shows "⌥⌘N". A letter without ⌘, ⌥, or
+        ⌃ just beeps; Esc cancels; Delete clears.
+  - [ ] From any app, the shortcut opens the notch on the screen with the pointer.
+  - [ ] The notch stays open until you press it again, click elsewhere, or move the pointer in
+        and back out.
+- [ ] **Export Settings…** saves a `.json` file. Change a few options, **Import Settings…** that
+      file, and they come back. Importing a random file shows a friendly message.
+
+### Behavior
+- [ ] **Open the notch by: Clicking it.** Hovering no longer opens it; a click on the notch
+      does. Moving away or clicking elsewhere still closes it.
+- [ ] **Right-click the closed notch:** a menu with Settings… and Quit EasyNotch appears.
+- [ ] **Hide the notch while an app is full screen:** make a video or app full screen. The notch
+      disappears on that screen and comes back when you leave full screen.
+
+### Appearance
+- [ ] Each animation style (Snappy, Smooth, Bouncy, Minimal) feels different when opening and
+      closing.
+- [ ] With macOS Accessibility → Display → "Reduce motion" on, the notch uses Minimal, and the
+      pane says so.
+- [ ] The "System" swatch shows your macOS accent color (blue on your Mac), not grey.
+- [ ] Pick an accent color: the selected tab, selected shelf files, and the AirDrop drop
+      highlight use it. "System" looks the same as before.
+
+### Displays (plug in your external monitor)
+- [ ] "All screens": the external monitor gets a black virtual notch at the top center, as tall
+      as its menu bar. Hover opens it just like the real one, and every tab works there.
+- [ ] The virtual notch's width slider changes it live.
+- [ ] "The main screen" and "This Mac's own screen" put the notch only where they say.
+
+### Modules
+- [ ] Reorder tabs by dragging a row onto another (it highlights) or with the arrows; the notch's
+      tab bar follows.
+- [ ] Turn a tab off:
+  - [ ] it disappears from the notch
+  - [ ] Music off: no music wings
+  - [ ] Pomodoro off: no timer wings
+  - [ ] Shelf off: dragging files no longer opens the notch
+- [ ] The last tab that's on can't be turned off.
+- [ ] "Tab that opens first" picks the tab shown on hover. A running timer, playing music, or a
+      file drag still opens its own tab.
+
+### Everything together
+- [ ] **Restore Defaults…** puts every option back, including tab order, displays, and the
+      shortcut.
+- [ ] CPU stays about 0% while idle.

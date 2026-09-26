@@ -11,6 +11,14 @@ nonisolated struct ScreenMetrics: Equatable, Sendable {
     var leftAreaWidth: CGFloat
     /// Width of the menu-bar area right of the notch.
     var rightAreaWidth: CGFloat
+
+    /// A pretend notch, centered at the top of a screen that has no real one, so the notch
+    /// works there too.
+    static func virtual(frame: CGRect, notchSize: CGSize) -> ScreenMetrics {
+        let width = min(max(notchSize.width, 1), frame.width)
+        let side = (frame.width - width) / 2
+        return ScreenMetrics(frame: frame, notchHeight: notchSize.height, leftAreaWidth: side, rightAreaWidth: side)
+    }
 }
 
 /// Where everything goes on one screen, in global AppKit coordinates.

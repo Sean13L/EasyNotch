@@ -219,6 +219,7 @@ private struct ItemMenu: View {
 private struct AirDropTile: View {
     let urls: [URL]
 
+    @Environment(\.notchAccent) private var accent
     @State private var isTargeted = false
 
     var body: some View {
@@ -232,7 +233,7 @@ private struct AirDropTile: View {
             .frame(width: 84, height: 96)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isTargeted ? Color.accentColor.opacity(0.45) : .white.opacity(0.08))
+                    .fill(isTargeted ? accent.opacity(0.45) : .white.opacity(0.08))
             )
             .contentShape(Rectangle())
         }

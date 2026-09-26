@@ -9,6 +9,7 @@ struct NotchRootView: View {
     var body: some View {
         let geometry = viewModel.geometry
         let presentation = viewModel.presentation
+        let animation = viewModel.animationStyle
         let style = NotchShapeLayout(presentation, geometry: geometry)
         let rect = geometry.localRect(style.rect)
 
@@ -33,14 +34,10 @@ struct NotchRootView: View {
         }
         .position(x: rect.midX, y: rect.midY)
         .frame(width: geometry.panelFrame.width, height: geometry.panelFrame.height)
-        // Closing uses a quicker, less bouncy spring than opening, so it gets out of the way.
-        .animation(
-            presentation == .open
-                ? .spring(response: 0.38, dampingFraction: 0.8)
-                : .spring(response: 0.28, dampingFraction: 0.9),
-            value: presentation
-        )
+        .animation(presentation == .open ? animation.opening : animation.closing, value: presentation)
         .environment(\.colorScheme, .dark)
+        .environment(\.notchAccent, NotchAccent.color(named: viewModel.accentName))
+        .environment(\.hasCustomNotchAccent, viewModel.accentName != "system")
     }
 
     private var contentTransition: AnyTransition {

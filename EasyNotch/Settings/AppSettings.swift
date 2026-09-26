@@ -6,6 +6,10 @@ nonisolated struct NumericSetting: Sendable {
     let key: String
     let defaultValue: Double
     let range: ClosedRange<Double>
+
+    func clamped(_ value: Double) -> Double {
+        min(max(value, range.lowerBound), range.upperBound)
+    }
 }
 
 extension NumericSetting {
@@ -19,6 +23,12 @@ extension NumericSetting {
     static let expandedHeight = NumericSetting(key: "notch.expandedHeight", defaultValue: 200, range: 190...400)
     /// Extra width on each side of the notch; 0 makes the closed notch exactly the hardware notch.
     static let compactWingWidth = NumericSetting(key: "notch.compactWingWidth", defaultValue: 64, range: 0...120)
+    /// Width of the notch drawn on screens that don't have one.
+    static let virtualNotchWidth = NumericSetting(key: "notch.virtualNotchWidth", defaultValue: 190, range: 120...300)
+
+    // Keyboard shortcut (-1 means none). Stored as numbers macOS understands.
+    static let shortcutKeyCode = NumericSetting(key: "shortcut.keyCode", defaultValue: -1, range: -1...511)
+    static let shortcutModifiers = NumericSetting(key: "shortcut.modifiers", defaultValue: 0, range: 0...4_194_304)
 
     // Pomodoro (lengths in minutes)
     static let focusMinutes = NumericSetting(key: "pomodoro.focusMinutes", defaultValue: 25, range: 1...120)
@@ -34,6 +44,13 @@ extension NumericSetting {
     static let shelfMaxItems = NumericSetting(key: "shelf.maxItems", defaultValue: 20, range: 5...50)
     /// Remove items this many days after they were added; 0 means never.
     static let shelfAutoRemoveDays = NumericSetting(key: "shelf.autoRemoveDays", defaultValue: 0, range: 0...30)
+
+    /// Every numeric setting, for export, import, and reset.
+    static let all: [NumericSetting] = [
+        hoverDelay, closeDelay, hotZoneMargin, expandedWidth, expandedHeight, compactWingWidth,
+        virtualNotchWidth, shortcutKeyCode, shortcutModifiers, focusMinutes, shortBreakMinutes,
+        longBreakMinutes, sessionsBeforeLongBreak, musicPausedLinger, shelfMaxItems, shelfAutoRemoveDays,
+    ]
 }
 
 /// Describes one on/off setting: where it's saved and its default.
@@ -44,6 +61,8 @@ nonisolated struct BoolSetting: Sendable {
 
 extension BoolSetting {
     static let hapticsEnabled = BoolSetting(key: "notch.hapticsEnabled", defaultValue: true)
+    static let openOnClick = BoolSetting(key: "notch.openOnClick", defaultValue: false)
+    static let hideInFullScreen = BoolSetting(key: "notch.hideInFullScreen", defaultValue: false)
     static let autoStartBreaks = BoolSetting(key: "pomodoro.autoStartBreaks", defaultValue: true)
     static let autoStartFocus = BoolSetting(key: "pomodoro.autoStartFocus", defaultValue: false)
     static let pomodoroInNotch = BoolSetting(key: "pomodoro.showInNotch", defaultValue: true)
@@ -53,19 +72,76 @@ extension BoolSetting {
     static let shelfOpenOnDrag = BoolSetting(key: "shelf.openOnDrag", defaultValue: true)
     static let shelfConfirmClear = BoolSetting(key: "shelf.confirmClear", defaultValue: true)
     static let shelfRemoveAfterDragOut = BoolSetting(key: "shelf.removeAfterDragOut", defaultValue: false)
+
+    /// Every on/off setting, for export, import, and reset.
+    static let all: [BoolSetting] = [
+        hapticsEnabled, openOnClick, hideInFullScreen, autoStartBreaks, autoStartFocus, pomodoroInNotch,
+        pomodoroNotifications, pomodoroSoundEnabled, musicInNotch, shelfOpenOnDrag, shelfConfirmClear,
+        shelfRemoveAfterDragOut,
+    ]
 }
 
-/// Describes one text setting: where it's saved and its default.
+/// Describes one text setting: where it's saved, its default, and (optionally) the only values
+/// it accepts.
 nonisolated struct StringSetting: Sendable {
     let key: String
     let defaultValue: String
+    /// Allowed values; nil means any text.
+    var choices: [String]?
+
+    func validated(_ value: String) -> String {
+        guard let choices else { return value }
+        return choices.contains(value) ? value : defaultValue
+    }
 }
 
 extension StringSetting {
+    /// "snappy", "smooth", "bouncy", or "minimal".
+    static let animationStyle = StringSetting(
+        key: "notch.animationStyle", defaultValue: "snappy", choices: ["snappy", "smooth", "bouncy", "minimal"]
+    )
+    /// "system" or a color name from `NotchAccent`.
+    static let accentColor = StringSetting(
+        key: "notch.accentColor", defaultValue: "system",
+        choices: ["system", "blue", "purple", "pink", "red", "orange", "yellow", "green", "graphite"]
+    )
+    /// "builtIn", "main", or "all": which screens get a notch.
+    static let displayMode = StringSetting(
+        key: "notch.displayMode", defaultValue: "builtIn", choices: ["builtIn", "main", "all"]
+    )
+    /// "lastUsed", or a module's raw value: the tab shown when the notch opens.
+    static let defaultModule = StringSetting(
+        key: "notch.defaultModule", defaultValue: "lastUsed", choices: ["lastUsed", "music", "shelf", "pomodoro"]
+    )
+    /// How the keyboard shortcut is shown, e.g. "⌥⌘N".
+    static let shortcutDisplay = StringSetting(key: "shortcut.display", defaultValue: "")
     /// Name of a macOS system sound.
     static let pomodoroSound = StringSetting(key: "pomodoro.sound", defaultValue: "Glass")
     /// "automatic", or a player's raw value ("spotify", "appleMusic").
-    static let musicPreferredPlayer = StringSetting(key: "music.preferredPlayer", defaultValue: "automatic")
+    static let musicPreferredPlayer = StringSetting(
+        key: "music.preferredPlayer", defaultValue: "automatic", choices: ["automatic", "spotify", "appleMusic"]
+    )
+
+    /// Every text setting, for export, import, and reset.
+    static let all: [StringSetting] = [
+        animationStyle, accentColor, displayMode, defaultModule, shortcutDisplay, pomodoroSound, musicPreferredPlayer,
+    ]
+}
+
+/// Describes one list-of-text setting: where it's saved and its default.
+nonisolated struct StringListSetting: Sendable {
+    let key: String
+    let defaultValue: [String]
+}
+
+extension StringListSetting {
+    /// The tabs' order, as module raw values.
+    static let moduleOrder = StringListSetting(key: "notch.moduleOrder", defaultValue: ["music", "shelf", "pomodoro"])
+    /// Tabs that are turned off.
+    static let hiddenModules = StringListSetting(key: "notch.hiddenModules", defaultValue: [])
+
+    /// Every list setting, for export, import, and reset.
+    static let all: [StringListSetting] = [moduleOrder, hiddenModules]
 }
 
 /// Every user-adjustable option. Each value loads from UserDefaults (falling back to its
@@ -75,69 +151,180 @@ final class AppSettings {
     // MARK: Notch behavior
 
     /// Seconds the pointer must rest on the notch before it opens.
-    var hoverDelay: Double { didSet { save(hoverDelay, .hoverDelay) } }
+    var hoverDelay = NumericSetting.hoverDelay.defaultValue { didSet { save(hoverDelay, .hoverDelay) } }
     /// Seconds the pointer can be away from the open notch before it closes.
-    var closeDelay: Double { didSet { save(closeDelay, .closeDelay) } }
+    var closeDelay = NumericSetting.closeDelay.defaultValue { didSet { save(closeDelay, .closeDelay) } }
     /// Extra points around the notch that still count as hovering it.
-    var hotZoneMargin: Double { didSet { save(hotZoneMargin, .hotZoneMargin) } }
+    var hotZoneMargin = NumericSetting.hotZoneMargin.defaultValue { didSet { save(hotZoneMargin, .hotZoneMargin) } }
     /// A light trackpad tap when the notch opens (Force Touch trackpads only).
-    var hapticsEnabled: Bool { didSet { save(hapticsEnabled, .hapticsEnabled) } }
+    var hapticsEnabled = BoolSetting.hapticsEnabled.defaultValue { didSet { save(hapticsEnabled, .hapticsEnabled) } }
+    /// Open with a click instead of by hovering.
+    var openOnClick = BoolSetting.openOnClick.defaultValue { didSet { save(openOnClick, .openOnClick) } }
+    /// Hide the notch on a screen while an app there is full screen.
+    var hideInFullScreen = BoolSetting.hideInFullScreen.defaultValue { didSet { save(hideInFullScreen, .hideInFullScreen) } }
+
+    // MARK: Appearance
+
+    var animationStyle = StringSetting.animationStyle.defaultValue { didSet { save(animationStyle, .animationStyle) } }
+    var accentColor = StringSetting.accentColor.defaultValue { didSet { save(accentColor, .accentColor) } }
 
     // MARK: Notch size
 
-    var expandedWidth: Double { didSet { save(expandedWidth, .expandedWidth) } }
-    var expandedHeight: Double { didSet { save(expandedHeight, .expandedHeight) } }
+    var expandedWidth = NumericSetting.expandedWidth.defaultValue { didSet { save(expandedWidth, .expandedWidth) } }
+    var expandedHeight = NumericSetting.expandedHeight.defaultValue { didSet { save(expandedHeight, .expandedHeight) } }
     /// How far the notch widens on each side to show a live activity (e.g. a running timer).
-    var compactWingWidth: Double { didSet { save(compactWingWidth, .compactWingWidth) } }
+    var compactWingWidth = NumericSetting.compactWingWidth.defaultValue { didSet { save(compactWingWidth, .compactWingWidth) } }
+
+    // MARK: Displays
+
+    var displayMode = StringSetting.displayMode.defaultValue { didSet { save(displayMode, .displayMode) } }
+    var virtualNotchWidth = NumericSetting.virtualNotchWidth.defaultValue { didSet { save(virtualNotchWidth, .virtualNotchWidth) } }
+
+    // MARK: Modules
+
+    var moduleOrder = StringListSetting.moduleOrder.defaultValue { didSet { save(moduleOrder, .moduleOrder) } }
+    var hiddenModules = StringListSetting.hiddenModules.defaultValue { didSet { save(hiddenModules, .hiddenModules) } }
+    var defaultModule = StringSetting.defaultModule.defaultValue { didSet { save(defaultModule, .defaultModule) } }
+
+    // MARK: Keyboard shortcut
+
+    /// macOS key code of the shortcut's key, or -1 for no shortcut.
+    var shortcutKeyCode = NumericSetting.shortcutKeyCode.defaultValue { didSet { save(shortcutKeyCode, .shortcutKeyCode) } }
+    /// The shortcut's modifier keys, in the format macOS's hot-key API expects.
+    var shortcutModifiers = NumericSetting.shortcutModifiers.defaultValue { didSet { save(shortcutModifiers, .shortcutModifiers) } }
+    var shortcutDisplay = StringSetting.shortcutDisplay.defaultValue { didSet { save(shortcutDisplay, .shortcutDisplay) } }
+    /// True while Settings is recording a new shortcut, so the current one is paused and the
+    /// keys reach the recorder. Not saved.
+    var isRecordingShortcut = false
 
     // MARK: Pomodoro
 
-    var focusMinutes: Double { didSet { save(focusMinutes, .focusMinutes) } }
-    var shortBreakMinutes: Double { didSet { save(shortBreakMinutes, .shortBreakMinutes) } }
-    var longBreakMinutes: Double { didSet { save(longBreakMinutes, .longBreakMinutes) } }
-    var sessionsBeforeLongBreak: Double { didSet { save(sessionsBeforeLongBreak, .sessionsBeforeLongBreak) } }
-    var autoStartBreaks: Bool { didSet { save(autoStartBreaks, .autoStartBreaks) } }
-    var autoStartFocus: Bool { didSet { save(autoStartFocus, .autoStartFocus) } }
+    var focusMinutes = NumericSetting.focusMinutes.defaultValue { didSet { save(focusMinutes, .focusMinutes) } }
+    var shortBreakMinutes = NumericSetting.shortBreakMinutes.defaultValue { didSet { save(shortBreakMinutes, .shortBreakMinutes) } }
+    var longBreakMinutes = NumericSetting.longBreakMinutes.defaultValue { didSet { save(longBreakMinutes, .longBreakMinutes) } }
+    var sessionsBeforeLongBreak = NumericSetting.sessionsBeforeLongBreak.defaultValue { didSet { save(sessionsBeforeLongBreak, .sessionsBeforeLongBreak) } }
+    var autoStartBreaks = BoolSetting.autoStartBreaks.defaultValue { didSet { save(autoStartBreaks, .autoStartBreaks) } }
+    var autoStartFocus = BoolSetting.autoStartFocus.defaultValue { didSet { save(autoStartFocus, .autoStartFocus) } }
     /// Show the running timer beside the closed notch.
-    var pomodoroInNotch: Bool { didSet { save(pomodoroInNotch, .pomodoroInNotch) } }
-    var pomodoroNotifications: Bool { didSet { save(pomodoroNotifications, .pomodoroNotifications) } }
-    var pomodoroSoundEnabled: Bool { didSet { save(pomodoroSoundEnabled, .pomodoroSoundEnabled) } }
+    var pomodoroInNotch = BoolSetting.pomodoroInNotch.defaultValue { didSet { save(pomodoroInNotch, .pomodoroInNotch) } }
+    var pomodoroNotifications = BoolSetting.pomodoroNotifications.defaultValue { didSet { save(pomodoroNotifications, .pomodoroNotifications) } }
+    var pomodoroSoundEnabled = BoolSetting.pomodoroSoundEnabled.defaultValue { didSet { save(pomodoroSoundEnabled, .pomodoroSoundEnabled) } }
     /// Name of a macOS system sound, e.g. "Glass".
-    var pomodoroSound: String { didSet { save(pomodoroSound, .pomodoroSound) } }
+    var pomodoroSound = StringSetting.pomodoroSound.defaultValue { didSet { save(pomodoroSound, .pomodoroSound) } }
 
     // MARK: Music
 
     /// "automatic", "spotify", or "appleMusic": which player to show when several are open.
-    var musicPreferredPlayer: String { didSet { save(musicPreferredPlayer, .musicPreferredPlayer) } }
+    var musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue { didSet { save(musicPreferredPlayer, .musicPreferredPlayer) } }
     /// Show what's playing beside the closed notch.
-    var musicInNotch: Bool { didSet { save(musicInNotch, .musicInNotch) } }
+    var musicInNotch = BoolSetting.musicInNotch.defaultValue { didSet { save(musicInNotch, .musicInNotch) } }
     /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
-    var musicPausedLinger: Double { didSet { save(musicPausedLinger, .musicPausedLinger) } }
+    var musicPausedLinger = NumericSetting.musicPausedLinger.defaultValue { didSet { save(musicPausedLinger, .musicPausedLinger) } }
 
     // MARK: Shelf
 
     /// Open the notch on the Shelf tab when files are dragged near it.
-    var shelfOpenOnDrag: Bool { didSet { save(shelfOpenOnDrag, .shelfOpenOnDrag) } }
-    var shelfMaxItems: Double { didSet { save(shelfMaxItems, .shelfMaxItems) } }
+    var shelfOpenOnDrag = BoolSetting.shelfOpenOnDrag.defaultValue { didSet { save(shelfOpenOnDrag, .shelfOpenOnDrag) } }
+    var shelfMaxItems = NumericSetting.shelfMaxItems.defaultValue { didSet { save(shelfMaxItems, .shelfMaxItems) } }
     /// Days before items are removed automatically; 0 means never.
-    var shelfAutoRemoveDays: Double { didSet { save(shelfAutoRemoveDays, .shelfAutoRemoveDays) } }
-    var shelfConfirmClear: Bool { didSet { save(shelfConfirmClear, .shelfConfirmClear) } }
+    var shelfAutoRemoveDays = NumericSetting.shelfAutoRemoveDays.defaultValue { didSet { save(shelfAutoRemoveDays, .shelfAutoRemoveDays) } }
+    var shelfConfirmClear = BoolSetting.shelfConfirmClear.defaultValue { didSet { save(shelfConfirmClear, .shelfConfirmClear) } }
     /// Take files off the shelf once they've been dragged out and dropped somewhere.
-    var shelfRemoveAfterDragOut: Bool { didSet { save(shelfRemoveAfterDragOut, .shelfRemoveAfterDragOut) } }
+    var shelfRemoveAfterDragOut = BoolSetting.shelfRemoveAfterDragOut.defaultValue { didSet { save(shelfRemoveAfterDragOut, .shelfRemoveAfterDragOut) } }
 
-    // MARK: Storage
+    // MARK: - Storage
 
     @ObservationIgnored private let defaults: UserDefaults
+    /// True while values are being read in, so they aren't written straight back.
+    @ObservationIgnored private var isReloading = false
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        reload()
+    }
+
+    /// Puts every option back to its default.
+    func resetToDefaults() {
+        allKeys.forEach(defaults.removeObject(forKey:))
+        reload()
+    }
+
+    // MARK: - Export and import
+
+    /// Every setting's current value, keyed by its storage key. Written to a file by "Export".
+    func exportedValues() -> [String: Any] {
+        var values: [String: Any] = [:]
+        NumericSetting.all.forEach { values[$0.key] = Self.load($0, from: defaults) }
+        BoolSetting.all.forEach { values[$0.key] = Self.load($0, from: defaults) }
+        StringSetting.all.forEach { values[$0.key] = Self.load($0, from: defaults) }
+        StringListSetting.all.forEach { values[$0.key] = Self.load($0, from: defaults) }
+        return values
+    }
+
+    /// Applies values from an exported file. Unknown keys and values of the wrong type are
+    /// ignored; numbers are kept in range and text limited to allowed choices. Returns how many
+    /// settings were applied.
+    @discardableResult
+    func importValues(_ values: [String: Any]) -> Int {
+        var applied = 0
+        for setting in NumericSetting.all {
+            // JSON's true/false also arrive as numbers; skip those. (Checking `is Bool` would
+            // wrongly skip the numbers 0 and 1 too.)
+            guard let number = values[setting.key] as? NSNumber,
+                  CFGetTypeID(number) != CFBooleanGetTypeID()
+            else { continue }
+            defaults.set(setting.clamped(number.doubleValue), forKey: setting.key)
+            applied += 1
+        }
+        for setting in BoolSetting.all {
+            guard let flag = values[setting.key] as? Bool else { continue }
+            defaults.set(flag, forKey: setting.key)
+            applied += 1
+        }
+        for setting in StringSetting.all {
+            guard let text = values[setting.key] as? String else { continue }
+            defaults.set(setting.validated(text), forKey: setting.key)
+            applied += 1
+        }
+        for setting in StringListSetting.all {
+            guard let list = values[setting.key] as? [String] else { continue }
+            defaults.set(list, forKey: setting.key)
+            applied += 1
+        }
+        reload()
+        return applied
+    }
+
+    // MARK: - Private
+
+    private var allKeys: [String] {
+        NumericSetting.all.map(\.key) + BoolSetting.all.map(\.key)
+            + StringSetting.all.map(\.key) + StringListSetting.all.map(\.key)
+    }
+
+    /// Reads every option from storage (or its default).
+    private func reload() {
+        isReloading = true
+        defer { isReloading = false }
         hoverDelay = Self.load(.hoverDelay, from: defaults)
         closeDelay = Self.load(.closeDelay, from: defaults)
         hotZoneMargin = Self.load(.hotZoneMargin, from: defaults)
         hapticsEnabled = Self.load(.hapticsEnabled, from: defaults)
+        openOnClick = Self.load(.openOnClick, from: defaults)
+        hideInFullScreen = Self.load(.hideInFullScreen, from: defaults)
+        animationStyle = Self.load(.animationStyle, from: defaults)
+        accentColor = Self.load(.accentColor, from: defaults)
         expandedWidth = Self.load(.expandedWidth, from: defaults)
         expandedHeight = Self.load(.expandedHeight, from: defaults)
         compactWingWidth = Self.load(.compactWingWidth, from: defaults)
+        displayMode = Self.load(.displayMode, from: defaults)
+        virtualNotchWidth = Self.load(.virtualNotchWidth, from: defaults)
+        moduleOrder = Self.load(.moduleOrder, from: defaults)
+        hiddenModules = Self.load(.hiddenModules, from: defaults)
+        defaultModule = Self.load(.defaultModule, from: defaults)
+        shortcutKeyCode = Self.load(.shortcutKeyCode, from: defaults)
+        shortcutModifiers = Self.load(.shortcutModifiers, from: defaults)
+        shortcutDisplay = Self.load(.shortcutDisplay, from: defaults)
         focusMinutes = Self.load(.focusMinutes, from: defaults)
         shortBreakMinutes = Self.load(.shortBreakMinutes, from: defaults)
         longBreakMinutes = Self.load(.longBreakMinutes, from: defaults)
@@ -158,43 +345,23 @@ final class AppSettings {
         shelfRemoveAfterDragOut = Self.load(.shelfRemoveAfterDragOut, from: defaults)
     }
 
-    func resetToDefaults() {
-        hoverDelay = NumericSetting.hoverDelay.defaultValue
-        closeDelay = NumericSetting.closeDelay.defaultValue
-        hotZoneMargin = NumericSetting.hotZoneMargin.defaultValue
-        hapticsEnabled = BoolSetting.hapticsEnabled.defaultValue
-        expandedWidth = NumericSetting.expandedWidth.defaultValue
-        expandedHeight = NumericSetting.expandedHeight.defaultValue
-        compactWingWidth = NumericSetting.compactWingWidth.defaultValue
-        focusMinutes = NumericSetting.focusMinutes.defaultValue
-        shortBreakMinutes = NumericSetting.shortBreakMinutes.defaultValue
-        longBreakMinutes = NumericSetting.longBreakMinutes.defaultValue
-        sessionsBeforeLongBreak = NumericSetting.sessionsBeforeLongBreak.defaultValue
-        autoStartBreaks = BoolSetting.autoStartBreaks.defaultValue
-        autoStartFocus = BoolSetting.autoStartFocus.defaultValue
-        pomodoroInNotch = BoolSetting.pomodoroInNotch.defaultValue
-        pomodoroNotifications = BoolSetting.pomodoroNotifications.defaultValue
-        pomodoroSoundEnabled = BoolSetting.pomodoroSoundEnabled.defaultValue
-        pomodoroSound = StringSetting.pomodoroSound.defaultValue
-        musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue
-        musicInNotch = BoolSetting.musicInNotch.defaultValue
-        musicPausedLinger = NumericSetting.musicPausedLinger.defaultValue
-        shelfOpenOnDrag = BoolSetting.shelfOpenOnDrag.defaultValue
-        shelfMaxItems = NumericSetting.shelfMaxItems.defaultValue
-        shelfAutoRemoveDays = NumericSetting.shelfAutoRemoveDays.defaultValue
-        shelfConfirmClear = BoolSetting.shelfConfirmClear.defaultValue
-        shelfRemoveAfterDragOut = BoolSetting.shelfRemoveAfterDragOut.defaultValue
-    }
-
     private func save(_ value: Double, _ setting: NumericSetting) {
+        guard !isReloading else { return }
         defaults.set(value, forKey: setting.key)
     }
 
     private func save(_ value: Bool, _ setting: BoolSetting) {
+        guard !isReloading else { return }
         defaults.set(value, forKey: setting.key)
     }
 
     private func save(_ value: String, _ setting: StringSetting) {
+        guard !isReloading else { return }
+        defaults.set(value, forKey: setting.key)
+    }
+
+    private func save(_ value: [String], _ setting: StringListSetting) {
+        guard !isReloading else { return }
         defaults.set(value, forKey: setting.key)
     }
 
@@ -204,8 +371,7 @@ final class AppSettings {
     /// command-line overrides like `-pomodoro.focusMinutes 1` arrive.
     private static func load(_ setting: NumericSetting, from defaults: UserDefaults) -> Double {
         guard defaults.object(forKey: setting.key) != nil else { return setting.defaultValue }
-        let saved = defaults.double(forKey: setting.key)
-        return min(max(saved, setting.range.lowerBound), setting.range.upperBound)
+        return setting.clamped(defaults.double(forKey: setting.key))
     }
 
     private static func load(_ setting: BoolSetting, from defaults: UserDefaults) -> Bool {
@@ -214,6 +380,10 @@ final class AppSettings {
     }
 
     private static func load(_ setting: StringSetting, from defaults: UserDefaults) -> String {
-        defaults.string(forKey: setting.key) ?? setting.defaultValue
+        defaults.string(forKey: setting.key).map(setting.validated) ?? setting.defaultValue
+    }
+
+    private static func load(_ setting: StringListSetting, from defaults: UserDefaults) -> [String] {
+        defaults.stringArray(forKey: setting.key) ?? setting.defaultValue
     }
 }

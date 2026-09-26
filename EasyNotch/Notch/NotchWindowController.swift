@@ -17,13 +17,12 @@ final class NotchWindowController {
     private let panel: NotchPanel
     private let settings: AppSettings
     private var metrics: ScreenMetrics
+    private var isHiddenForFullScreen = false
 
-    /// Returns nil for a screen without a notch.
-    init?(screen: NSScreen, settings: AppSettings, features: NotchFeatures) {
-        guard let displayID = screen.displayID,
-              let metrics = screen.notchMetrics,
-              let geometry = Self.geometry(for: metrics, settings: settings)
-        else { return nil }
+    /// `metrics` describes the screen's notch: its real one, or a virtual one drawn on a screen
+    /// without a notch. Returns nil if the measurements don't make sense.
+    init?(displayID: CGDirectDisplayID, metrics: ScreenMetrics, settings: AppSettings, features: NotchFeatures) {
+        guard let geometry = Self.geometry(for: metrics, settings: settings) else { return nil }
 
         self.displayID = displayID
         self.metrics = metrics
@@ -47,11 +46,24 @@ final class NotchWindowController {
         observeSizeSettings()
     }
 
-    /// The screen moved, resized, or changed resolution.
-    func update(screen: NSScreen) {
-        guard let newMetrics = screen.notchMetrics, newMetrics != metrics else { return }
+    /// The screen moved, resized, or changed resolution (or the virtual notch's width changed).
+    func update(metrics newMetrics: ScreenMetrics) {
+        guard newMetrics != metrics else { return }
         metrics = newMetrics
         relayout()
+    }
+
+    /// Hides the notch while an app on this screen is full screen (if that option is on).
+    func setHiddenForFullScreen(_ hidden: Bool) {
+        guard hidden != isHiddenForFullScreen else { return }
+        isHiddenForFullScreen = hidden
+        if hidden {
+            viewModel.close()
+            panel.orderOut(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
+        Log.notch.debug("\(hidden ? "Notch hidden: an app is full screen" : "Notch shown again: full screen ended", privacy: .public)")
     }
 
     func close() {
