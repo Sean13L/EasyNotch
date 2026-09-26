@@ -167,9 +167,13 @@ permissions across updates.
 
 **Each release**
 1. Bump `MARKETING_VERSION` in `project.yml` and update `SmokeTests`.
-2. Run `scripts/release.sh`. It builds Release, re-signs with the certificate (Hardened
-   Runtime on, no debugging entitlements), and writes `dist/EasyNotch-<version>.zip` plus a
-   `.sha256` checksum.
+2. Run `scripts/release.sh`. It builds Release **unsigned**, signs it with the certificate
+   (Hardened Runtime on, no debugging entitlements), and writes `dist/EasyNotch-<version>.zip`
+   plus a `.sha256` checksum.
+   - **Why unsigned first:** re-signing an app Xcode already signed with Apple Development
+     leaves bytes of the old signature in the binary, including the certificate name, which
+     contains the owner's email address. v1.0.0 shipped with this. The script now refuses to
+     package if "Apple Development" appears anywhere in the app.
 3. Unzip a copy somewhere else and open it, to check it works.
 4. Tag and publish:
    ```bash
@@ -183,4 +187,5 @@ permissions across updates.
 - **Footprint:** `footprint -p <pid>`.
 - **Leaks:** `leaks <pid>`. Run it on the Debug build, because Release builds block the tool.
 
-v1.0.0 measured: 0.0% idle CPU, 29 MB, 0 leaks.
+- v1.0.0 measured: 0.0% idle CPU, 29 MB, 0 leaks.
+- v1.1.0 measured: 0.0% idle CPU, 40 MB. The System tab costs about 0.8% while open.

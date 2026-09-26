@@ -15,17 +15,27 @@ ZIP="dist/EasyNotch-$VERSION.zip"
 
 echo "▸ Building EasyNotch $VERSION (Release)"
 xcodegen generate --quiet
+# Build unsigned. Re-signing an app Xcode already signed leaves bytes of the old Apple
+# Development signature behind in the binary, and that certificate's name contains the
+# owner's email address.
+rm -rf build/release
 xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -configuration Release \
-    -derivedDataPath build/release build -quiet
+    -derivedDataPath build/release build -quiet CODE_SIGNING_ALLOWED=NO
 
-# Re-sign with the release certificate, so the app carries no personal details. Hardened
+# Sign with the release certificate, so the app carries no personal details. Hardened
 # Runtime stays on, and only the app's own entitlements are included (no debugging ones).
 echo "▸ Signing with \"$IDENTITY\""
 codesign --force --options runtime --timestamp=none \
     --entitlements EasyNotch/Resources/EasyNotch.entitlements \
     --sign "$IDENTITY" "$APP"
 codesign --verify --strict "$APP"
-codesign -dv "$APP" 2>&1 | grep -E "^(Authority|TeamIdentifier|Identifier)="
+codesign -dvv "$APP" 2>&1 | grep -E "^(Authority|TeamIdentifier|Identifier)="
+
+# Never ship anything from the development certificate.
+if LC_ALL=C grep -rqa "Apple Development" "$APP"; then
+    echo "✗ The app still contains an Apple Development certificate. Not packaging." >&2
+    exit 1
+fi
 
 echo "▸ Packaging"
 mkdir -p dist
