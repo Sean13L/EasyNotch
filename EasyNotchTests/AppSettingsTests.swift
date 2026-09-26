@@ -29,6 +29,15 @@ struct AppSettingsTests {
             #expect(settings.shelfAutoRemoveDays == 0)
             #expect(settings.shelfConfirmClear)
             #expect(!settings.shelfRemoveAfterDragOut)
+            #expect(settings.calendarInNotch)
+            #expect(settings.calendarLeadMinutes == 5)
+            #expect(settings.calendarShowAllDay)
+            #expect(settings.calendarHiddenIDs.isEmpty)
+            #expect(settings.batteryChargingFlash)
+            #expect(settings.batteryLowWarning)
+            #expect(settings.batteryLowThreshold == 10)
+            #expect(!settings.systemTransferInNotch)  // off: no background sampling
+            #expect(settings.systemTransferThreshold == 5)
         }
     }
 

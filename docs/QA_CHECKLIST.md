@@ -266,3 +266,63 @@ every rebuild.
 - [ ] Settings → General → "Open EasyNotch when you log in": turn it off and on again, then
       restart. The /Applications copy starts by itself.
 - [ ] Walk through the earlier phases' checks you haven't confirmed yet.
+
+---
+
+## v1.1: Next Meeting, Battery & Charging, System Monitor
+
+### Tabs
+- [ ] Six tabs fit at the smallest notch size (Settings → Size): three sit left of the notch
+      and three right, before the gear.
+- [ ] Turn tabs off until 3 or fewer are on: they all move back to the left, like in v1.0.
+- [ ] Settings → Modules lists the new tabs at the end, and you can reorder and hide them.
+
+### Next Meeting (Calendar tab)
+- [ ] Before allowing access, the tab shows **Allow Calendar Access**. No prompt appears until
+      you press it.
+- [ ] Press it and choose Allow: today's meetings appear.
+- [ ] Declining instead shows "Calendar access is turned off". **Open System Settings** opens
+      Privacy & Security → Calendars.
+- [ ] A meeting with a Zoom, Meet, Teams, Webex, or FaceTime link has a **Join** button, and
+      it opens the call.
+- [ ] Meetings you've declined don't appear.
+- [ ] Settings → Calendar:
+  - [ ] "List all-day events" hides or shows them.
+  - [ ] Unticking a calendar removes its events.
+- [ ] Beside the notch (make a test event starting in a few minutes):
+  - [ ] from your lead time (default 5 minutes), a colored dot and "4m" appear
+  - [ ] "now" appears at the start time
+  - [ ] they disappear 5 minutes after the start
+  - [ ] hovering opens the Calendar tab
+- [ ] Moving or deleting the test event in Calendar updates the notch within a few seconds.
+
+### Battery & Charging
+- [ ] The Battery tab's percentage and status match the battery menu in the menu bar, including
+      "holding at 80%" when macOS pauses charging.
+- [ ] The tab shows the charger's watts, battery health, and cycle count. Compare them with
+      System Settings → Battery → ⓘ.
+- [ ] Plug in the charger: a bolt and the percentage flash beside the notch for about
+      4 seconds.
+- [ ] Unplug: no flash.
+- [ ] Turning Low Power Mode on or off shows in the tab straight away.
+- [ ] Settings → Battery: turning off "Flash the charge when you plug in" stops the flash.
+- [ ] Low battery: when the battery is at or below the threshold and unplugged, a red battery
+      shows beside the notch. Plugging in removes it. You can only check this when the battery
+      is actually low.
+
+### System Monitor
+- [ ] The System tab shows CPU and memory close to Activity Monitor's figures. The charts fill
+      in over time.
+- [ ] Download speed rises while you download something big.
+- [ ] Free disk space matches Finder's "available" figure.
+- [ ] Settings → System → "Show big downloads and uploads beside the notch":
+  - [ ] with it on, a large download shows "↓ 12 MB/s" beside the notch after a couple of
+        seconds
+  - [ ] the speed disappears soon after the download ends
+
+### Priorities and cost
+- [ ] With music playing, plugging in the charger shows the flash first, then music comes
+      back.
+- [ ] A meeting about to start wins over a running timer or music.
+- [ ] Hidden tabs never show anything beside the notch.
+- [ ] CPU stays about 0% while idle with nothing playing and the System tab closed.

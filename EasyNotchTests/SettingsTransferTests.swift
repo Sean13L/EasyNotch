@@ -61,7 +61,7 @@ struct SettingsTransferTests {
 
             settings.resetToDefaults()
             #expect(settings.displayMode == "builtIn")
-            #expect(settings.moduleOrder == ["music", "shelf", "pomodoro"])
+            #expect(settings.moduleOrder == ["music", "shelf", "pomodoro", "calendar", "battery", "system"])
             #expect(settings.hiddenModules.isEmpty)
             #expect(settings.shortcutKeyCode == -1)
             #expect(settings.accentColor == "system")

@@ -28,5 +28,9 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>EasyNotch controls Spotify and Music so you can play, pause, and skip tracks from the notch.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>EasyNotch shows your next meeting in the notch, with a button to join it. Events stay on your Mac.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>EasyNotch shows your next meeting in the notch, with a button to join it. Events stay on your Mac.</string>
 </dict>
 </plist>

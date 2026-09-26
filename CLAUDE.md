@@ -4,6 +4,7 @@ Native macOS app that turns the MacBook notch into a hover-to-expand panel with:
 - music controls for Spotify and Apple Music
 - a file shelf with AirDrop
 - a Pomodoro timer
+- next meeting (Calendar), battery & charging, and a system monitor (v1.1)
 
 Everything is customizable. MIT licensed and distributed through GitHub Releases.
 
@@ -11,24 +12,18 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **Phases 0–5: done.** All features are built; 112+ tests pass.
-- **Owner hasn't confirmed yet (Phase 5):**
-  - the system accent fix
-  - drag-to-reorder
-  - the keyboard shortcut
-  - launch at login
-  - the virtual notch on an external monitor
-  - click mode
-  - the right-click menu
-- **Now: Phase 6 (release v1.0.0).**
-  - **Done:** icon, MIT license, README, health check (0% idle, 29 MB, 0 leaks), and
-    `scripts/release.sh`. The release is signed by the owner's self-signed "EasyNotch
-    Developer" certificate, not the Apple Development one (its name contains the owner's
-    email). It's installed in /Applications.
-  - **Published** to github.com/Sean13L/EasyNotch as release v1.0.0. Commits use the owner's
-    GitHub noreply email.
-- **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
-  Releasing.
+- **v1.0.0: published** at github.com/Sean13L/EasyNotch (Phases 0–6). Commits use the owner's
+  GitHub noreply email.
+- **Releases are signed** by the owner's self-signed "EasyNotch Developer" certificate via
+  `scripts/release.sh`, never the Apple Development one (its name contains the owner's email).
+- **Now: v1.1.0 (BLUEPRINT §6.5–6.8).**
+  - **Built:** three new tabs (Calendar, Battery, System), their settings panes and live
+    activities, the split tab bar, and the live-activity priorities. 135 tests pass. Idle CPU
+    is 0%; the System tab costs about 0.8% while open.
+  - **The owner tested it (2026-09-26):** everything works. The release zip is built with
+    `scripts/release.sh`, and the app is installed in /Applications.
+  - **Not published yet.** Tag v1.1.0, push, and create the GitHub release only when the owner
+    says "publish".
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).
 - Roadmap: `docs/BLUEPRINT.md` §12. Update this section whenever a phase finishes.
 

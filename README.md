@@ -5,8 +5,8 @@
 <h1 align="center">EasyNotch</h1>
 
 <p align="center">
-  Your MacBook's notch, put to work: music controls, a file shelf with AirDrop, and a Pomodoro
-  timer. Hover to open.
+  Your MacBook's notch, put to work: music controls, a file shelf with AirDrop, a Pomodoro
+  timer, your next meeting, battery, and system stats. Hover to open.
 </p>
 
 ---
@@ -29,8 +29,24 @@ there. Hover over it, or click if you prefer, and it opens into a panel.
   - Focus sessions, short breaks, and a long break every few sessions, with notifications
     and a sound you choose.
   - Keeps accurate time through sleep and restarts.
-- **✨ Live activities.** While music plays or a timer runs, the closed notch grows small
-  "wings" showing cover art with bouncing bars, or the time remaining.
+- **📅 Next meeting**
+  - Today's meetings from the Calendar app, with a **Join** button for Zoom, Google Meet,
+    Teams, Webex, and FaceTime links.
+  - A countdown beside the notch a few minutes before each one starts.
+- **🔋 Battery & charging**
+  - Charge, time left, charger wattage, battery health, and cycle count.
+  - Shows why a plugged-in Mac is "holding at 80%".
+  - A charging flash when you plug in, and a warning when the battery runs low.
+- **📊 System monitor**
+  - CPU, memory, and network speed with live charts, plus free disk space.
+  - Optionally shows big downloads beside the notch.
+  - It only measures while you're looking at it.
+- **✨ Live activities.** The closed notch grows small "wings" when something is happening:
+  - cover art with bouncing bars while music plays
+  - the time left on a timer
+  - a meeting about to start
+  - the charging flash
+  - the low-battery warning
 - **⚙️ Customization**
   - **Size and timing:** size, hover and close delays, open by hover or click, and
     animation style.
@@ -49,7 +65,7 @@ there. Hover over it, or click if you prefer, and it opens into a panel.
 
 ## Install
 
-1. Download **EasyNotch-1.0.0.zip** from the
+1. Download **EasyNotch-1.1.0.zip** from the
    [latest release](https://github.com/Sean13L/EasyNotch/releases/latest).
 2. Unzip it and drag **EasyNotch** into your **Applications** folder.
 3. Open it. macOS will say *"Apple could not verify 'EasyNotch' is free of malware…"*. Click
@@ -74,12 +90,13 @@ EasyNotch asks only for what a feature needs, and only when you first use it:
 |---|---|---|
 | *"EasyNotch wants to control Spotify / Music"* | To play, pause, skip, and show cover art | When you press a music button or **Allow…** |
 | Notifications | To tell you when a Pomodoro session ends | When you first start a timer |
+| Calendars | To show your next meeting and its Join link. Events stay on your Mac | When you press **Allow Calendar Access** in the Calendar tab |
 | Access to Downloads, Desktop, or Documents | To reopen shelf files stored there | The first time a shelf file from that folder is shown |
 
 EasyNotch doesn't need Accessibility or Screen Recording access.
 
 It has no analytics and no accounts. The only thing it downloads is Spotify's cover art for
-the song you're playing.
+the song you're playing. Battery and system stats need no permission at all.
 
 ## Build from source
 

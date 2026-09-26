@@ -45,11 +45,24 @@ extension NumericSetting {
     /// Remove items this many days after they were added; 0 means never.
     static let shelfAutoRemoveDays = NumericSetting(key: "shelf.autoRemoveDays", defaultValue: 0, range: 0...30)
 
+    // Calendar
+    /// Minutes before a meeting that it appears beside the notch.
+    static let calendarLeadMinutes = NumericSetting(key: "calendar.leadMinutes", defaultValue: 5, range: 1...15)
+
+    // Battery
+    /// Percentage at or below which a low-battery warning shows beside the notch.
+    static let batteryLowThreshold = NumericSetting(key: "battery.lowThreshold", defaultValue: 10, range: 5...30)
+
+    // System
+    /// Megabytes per second above which a transfer shows beside the notch.
+    static let systemTransferThreshold = NumericSetting(key: "system.transferThresholdMB", defaultValue: 5, range: 1...100)
+
     /// Every numeric setting, for export, import, and reset.
     static let all: [NumericSetting] = [
         hoverDelay, closeDelay, hotZoneMargin, expandedWidth, expandedHeight, compactWingWidth,
         virtualNotchWidth, shortcutKeyCode, shortcutModifiers, focusMinutes, shortBreakMinutes,
         longBreakMinutes, sessionsBeforeLongBreak, musicPausedLinger, shelfMaxItems, shelfAutoRemoveDays,
+        calendarLeadMinutes, batteryLowThreshold, systemTransferThreshold,
     ]
 }
 
@@ -72,12 +85,18 @@ extension BoolSetting {
     static let shelfOpenOnDrag = BoolSetting(key: "shelf.openOnDrag", defaultValue: true)
     static let shelfConfirmClear = BoolSetting(key: "shelf.confirmClear", defaultValue: true)
     static let shelfRemoveAfterDragOut = BoolSetting(key: "shelf.removeAfterDragOut", defaultValue: false)
+    static let calendarInNotch = BoolSetting(key: "calendar.showInNotch", defaultValue: true)
+    static let calendarShowAllDay = BoolSetting(key: "calendar.showAllDay", defaultValue: true)
+    static let batteryChargingFlash = BoolSetting(key: "battery.chargingFlash", defaultValue: true)
+    static let batteryLowWarning = BoolSetting(key: "battery.lowWarning", defaultValue: true)
+    static let systemTransferInNotch = BoolSetting(key: "system.transferInNotch", defaultValue: false)
 
     /// Every on/off setting, for export, import, and reset.
     static let all: [BoolSetting] = [
         hapticsEnabled, openOnClick, hideInFullScreen, autoStartBreaks, autoStartFocus, pomodoroInNotch,
         pomodoroNotifications, pomodoroSoundEnabled, musicInNotch, shelfOpenOnDrag, shelfConfirmClear,
-        shelfRemoveAfterDragOut,
+        shelfRemoveAfterDragOut, calendarInNotch, calendarShowAllDay, batteryChargingFlash, batteryLowWarning,
+        systemTransferInNotch,
     ]
 }
 
@@ -111,7 +130,8 @@ extension StringSetting {
     )
     /// "lastUsed", or a module's raw value: the tab shown when the notch opens.
     static let defaultModule = StringSetting(
-        key: "notch.defaultModule", defaultValue: "lastUsed", choices: ["lastUsed", "music", "shelf", "pomodoro"]
+        key: "notch.defaultModule", defaultValue: "lastUsed",
+        choices: ["lastUsed", "music", "shelf", "pomodoro", "calendar", "battery", "system"]
     )
     /// How the keyboard shortcut is shown, e.g. "⌥⌘N".
     static let shortcutDisplay = StringSetting(key: "shortcut.display", defaultValue: "")
@@ -136,12 +156,16 @@ nonisolated struct StringListSetting: Sendable {
 
 extension StringListSetting {
     /// The tabs' order, as module raw values.
-    static let moduleOrder = StringListSetting(key: "notch.moduleOrder", defaultValue: ["music", "shelf", "pomodoro"])
+    static let moduleOrder = StringListSetting(
+        key: "notch.moduleOrder", defaultValue: ["music", "shelf", "pomodoro", "calendar", "battery", "system"]
+    )
     /// Tabs that are turned off.
     static let hiddenModules = StringListSetting(key: "notch.hiddenModules", defaultValue: [])
+    /// Calendars (by identifier) left out of the Calendar tab; new calendars show by default.
+    static let calendarHiddenIDs = StringListSetting(key: "calendar.hiddenCalendars", defaultValue: [])
 
     /// Every list setting, for export, import, and reset.
-    static let all: [StringListSetting] = [moduleOrder, hiddenModules]
+    static let all: [StringListSetting] = [moduleOrder, hiddenModules, calendarHiddenIDs]
 }
 
 /// Every user-adjustable option. Each value loads from UserDefaults (falling back to its
@@ -231,6 +255,27 @@ final class AppSettings {
     var shelfConfirmClear = BoolSetting.shelfConfirmClear.defaultValue { didSet { save(shelfConfirmClear, .shelfConfirmClear) } }
     /// Take files off the shelf once they've been dragged out and dropped somewhere.
     var shelfRemoveAfterDragOut = BoolSetting.shelfRemoveAfterDragOut.defaultValue { didSet { save(shelfRemoveAfterDragOut, .shelfRemoveAfterDragOut) } }
+
+    // MARK: Calendar
+
+    /// Show an upcoming meeting beside the closed notch.
+    var calendarInNotch = BoolSetting.calendarInNotch.defaultValue { didSet { save(calendarInNotch, .calendarInNotch) } }
+    var calendarLeadMinutes = NumericSetting.calendarLeadMinutes.defaultValue { didSet { save(calendarLeadMinutes, .calendarLeadMinutes) } }
+    var calendarShowAllDay = BoolSetting.calendarShowAllDay.defaultValue { didSet { save(calendarShowAllDay, .calendarShowAllDay) } }
+    var calendarHiddenIDs = StringListSetting.calendarHiddenIDs.defaultValue { didSet { save(calendarHiddenIDs, .calendarHiddenIDs) } }
+
+    // MARK: Battery
+
+    /// Briefly show the charge beside the notch when a charger is connected.
+    var batteryChargingFlash = BoolSetting.batteryChargingFlash.defaultValue { didSet { save(batteryChargingFlash, .batteryChargingFlash) } }
+    var batteryLowWarning = BoolSetting.batteryLowWarning.defaultValue { didSet { save(batteryLowWarning, .batteryLowWarning) } }
+    var batteryLowThreshold = NumericSetting.batteryLowThreshold.defaultValue { didSet { save(batteryLowThreshold, .batteryLowThreshold) } }
+
+    // MARK: System
+
+    /// Show big network transfers beside the notch (measures the network every 2 s).
+    var systemTransferInNotch = BoolSetting.systemTransferInNotch.defaultValue { didSet { save(systemTransferInNotch, .systemTransferInNotch) } }
+    var systemTransferThreshold = NumericSetting.systemTransferThreshold.defaultValue { didSet { save(systemTransferThreshold, .systemTransferThreshold) } }
 
     // MARK: - Storage
 
@@ -343,6 +388,15 @@ final class AppSettings {
         shelfAutoRemoveDays = Self.load(.shelfAutoRemoveDays, from: defaults)
         shelfConfirmClear = Self.load(.shelfConfirmClear, from: defaults)
         shelfRemoveAfterDragOut = Self.load(.shelfRemoveAfterDragOut, from: defaults)
+        calendarInNotch = Self.load(.calendarInNotch, from: defaults)
+        calendarLeadMinutes = Self.load(.calendarLeadMinutes, from: defaults)
+        calendarShowAllDay = Self.load(.calendarShowAllDay, from: defaults)
+        calendarHiddenIDs = Self.load(.calendarHiddenIDs, from: defaults)
+        batteryChargingFlash = Self.load(.batteryChargingFlash, from: defaults)
+        batteryLowWarning = Self.load(.batteryLowWarning, from: defaults)
+        batteryLowThreshold = Self.load(.batteryLowThreshold, from: defaults)
+        systemTransferInNotch = Self.load(.systemTransferInNotch, from: defaults)
+        systemTransferThreshold = Self.load(.systemTransferThreshold, from: defaults)
     }
 
     private func save(_ value: Double, _ setting: NumericSetting) {

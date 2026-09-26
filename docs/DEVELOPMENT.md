@@ -16,6 +16,8 @@ open build/Build/Products/Debug/EasyNotch.app --args -StartPomodoroOnLaunch YES 
 open build/Build/Products/Debug/EasyNotch.app --args -AddToShelf /path/to/file
 # Any setting works the same way, e.g. show the notch on every screen
 open build/Build/Products/Debug/EasyNotch.app --args -notch.displayMode all
+# Sample the system monitor every second and log each sample (measures its cost)
+open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
 ```
 
 **Clean up after test runs.**
@@ -97,6 +99,38 @@ open build/Build/Products/Debug/EasyNotch.app --args -notch.displayMode all
 - The engine stores end times, not countdowns, so sleep can't make it drift.
 - The controller holds a `ProcessInfo` activity while running, so App Nap doesn't throttle
   the once-a-second redraw.
+
+## Calendar
+- **Calendars needs the entitlement `com.apple.security.personal-information.calendars`.**
+  Under the Hardened Runtime, a missing entitlement means no prompt and no events, with no error.
+  It also needs `NSCalendarsFullAccessUsageDescription` in Info.plist.
+- **Ask for access only when the user presses the button** (`requestFullAccessToEvents`). In the
+  background, only check `EKEventStore.authorizationStatus`.
+- **Never log event titles or notes.** Log counts only.
+- **An `EKEventStore` made before access was granted can keep returning nothing.**
+  `CalendarService` replaces it when access turns on, including when that happens in System
+  Settings.
+- **Don't poll.** `CalendarService` sleeps until `MeetingSchedule.nextChange`, and reloads on
+  `EKEventStoreChanged`, day change, and wake.
+
+## Battery
+- **`IOPSNotificationCreateRunLoopSource`'s callback is a plain C function.** Pass `self`
+  through the context pointer (`Unmanaged`), not a capture.
+- **A plugged-in Mac that isn't charging is usually holding at 80% (Optimized Charging).** It
+  isn't an error. `BatterySnapshot.isHoldingCharge` covers it.
+- **Health:** `AppleSmartBattery` → `BatteryData` → `NominalChargeCapacity` / `DesignCapacity`.
+  A new battery can read above 100%, so it's capped.
+- **Compare with `pmset -g batt`** and `ioreg -rn AppleSmartBattery`.
+
+## System monitor
+- **Nothing samples unless the System tab is open or the transfer indicator is on.** Keep it
+  that way.
+- **`volumeAvailableCapacityForImportantUsageKey` costs about 15 ms** (macOS totals up purgeable
+  space), and at once a second it also grew memory. It's read when the tab opens and then every
+  30 s. The other readings cost under 0.05 ms.
+- **Keep one `mach_host_self()`.** Each call adds a reference to the port.
+- **`getifaddrs` byte counters are 32-bit and wrap around.** Use wrapping subtraction (`&-`),
+  and skip `lo0`, `utun*`, and other virtual interfaces.
 
 ## Settings and SwiftUI
 - **Adding an option:**

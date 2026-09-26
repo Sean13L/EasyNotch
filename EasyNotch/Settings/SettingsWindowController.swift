@@ -10,13 +10,15 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     private let settings: AppSettings
     private let nowPlaying: NowPlayingService
+    private let calendar: CalendarService
     private var window: NSWindow?
     private var selectedPane: SettingsPane = .general
     private var sizePreview: SizePreview = .expanded
 
-    init(settings: AppSettings, nowPlaying: NowPlayingService) {
+    init(settings: AppSettings, nowPlaying: NowPlayingService, calendar: CalendarService) {
         self.settings = settings
         self.nowPlaying = nowPlaying
+        self.calendar = calendar
     }
 
     func show() {
@@ -50,6 +52,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let view = SettingsView(
             settings: settings,
             nowPlaying: nowPlaying,
+            calendar: calendar,
             onPaneChange: { [weak self] pane in
                 self?.selectedPane = pane
                 self?.updatePreview()

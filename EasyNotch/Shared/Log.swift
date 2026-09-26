@@ -16,4 +16,7 @@ nonisolated enum Log {
     static let pomodoro = Logger(subsystem: subsystem, category: "pomodoro")
     static let music = Logger(subsystem: subsystem, category: "music")
     static let shelf = Logger(subsystem: subsystem, category: "shelf")
+    static let battery = Logger(subsystem: subsystem, category: "battery")
+    static let system = Logger(subsystem: subsystem, category: "system")
+    static let calendar = Logger(subsystem: subsystem, category: "calendar")
 }

@@ -65,13 +65,14 @@ struct ActivePlayerPickerTests {
     // MARK: - What shows beside the notch
 
     @Test func liveActivityPriority() {
-        func resolve(running: Bool = false, paused: Bool = false, playing: Bool = false, recentlyPaused: Bool = false) -> LiveActivity? {
-            LiveActivity.resolve(timerRunning: running, timerPaused: paused, musicPlaying: playing, musicRecentlyPaused: recentlyPaused)
-        }
-        #expect(resolve(running: true, playing: true) == .pomodoro)
-        #expect(resolve(paused: true, playing: true) == .music)
-        #expect(resolve(paused: true, recentlyPaused: true) == .music)
-        #expect(resolve(paused: true) == .pomodoro)
-        #expect(resolve() == nil)
+        typealias Candidates = LiveActivity.Candidates
+        #expect(LiveActivity.resolve(Candidates()) == nil)
+        #expect(LiveActivity.resolve(Candidates(chargingFlash: true, meetingSoon: true, timerRunning: true)) == .battery)
+        #expect(LiveActivity.resolve(Candidates(meetingSoon: true, timerRunning: true, musicPlaying: true)) == .meeting)
+        #expect(LiveActivity.resolve(Candidates(timerRunning: true, musicPlaying: true)) == .pomodoro)
+        #expect(LiveActivity.resolve(Candidates(musicRecentlyPaused: true, lowBattery: true)) == .music)
+        #expect(LiveActivity.resolve(Candidates(lowBattery: true, bigTransfer: true)) == .battery)
+        #expect(LiveActivity.resolve(Candidates(bigTransfer: true, timerPaused: true)) == .network)
+        #expect(LiveActivity.resolve(Candidates(timerPaused: true)) == .pomodoro)
     }
 }

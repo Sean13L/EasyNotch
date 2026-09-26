@@ -20,6 +20,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if UserDefaults.standard.bool(forKey: "StartPomodoroOnLaunch"), !services.pomodoro.engine.isActive {
             services.pomodoro.startPauseOrResume()
         }
+        if UserDefaults.standard.bool(forKey: "SampleSystemOnLaunch") {
+            // Measure as if the System tab were open, and log each sample.
+            services.system.logsSamples = true
+            services.system.beginWatching()
+        }
         if let path = UserDefaults.standard.string(forKey: "AddToShelf") {
             services.shelf.add([URL(fileURLWithPath: path)])
         }

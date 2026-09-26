@@ -8,32 +8,35 @@ struct ExpandedView: View {
 
     @Environment(ShelfStore.self) private var shelf
 
+    /// Up to this many tabs sit left of the notch. With more, they split across both sides,
+    /// because six tabs don't fit on one side at small sizes.
+    private static let tabsOnOneSide = 3
+
     var body: some View {
         let notch = viewModel.geometry.notchRect
+        let modules = viewModel.visibleModules
+        let leftCount = modules.count <= Self.tabsOnOneSide ? modules.count : (modules.count + 1) / 2
 
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                HStack(spacing: 4) {
-                    ForEach(viewModel.visibleModules) { module in
-                        TabButton(module: module, isSelected: module == viewModel.currentModule) {
-                            viewModel.selectedModule = module
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                tabs(Array(modules.prefix(leftCount)))
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Nothing can be seen here: it's behind the hardware notch.
                 Color.clear.frame(width: notch.width)
 
-                Button {
-                    viewModel.showSettings()
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .frame(width: 28, height: 24)
-                        .contentShape(Rectangle())
+                HStack(spacing: 4) {
+                    tabs(Array(modules.dropFirst(leftCount)))
+                    Button {
+                        viewModel.showSettings()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .frame(width: 28, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Settings")
                 }
-                .buttonStyle(.plain)
-                .help("Settings")
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(height: notch.height)
@@ -44,6 +47,9 @@ struct ExpandedView: View {
                 case .music: MusicView()
                 case .pomodoro: PomodoroView()
                 case .shelf: ShelfView()
+                case .calendar: CalendarView()
+                case .battery: BatteryView()
+                case .system: SystemView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -60,6 +66,18 @@ struct ExpandedView: View {
             let shelfIsOn = viewModel.visibleModules.contains(.shelf)
             shelf.isDropTargeted = isTargeted && shelfIsOn
             if isTargeted, shelfIsOn { viewModel.selectedModule = .shelf }
+        }
+    }
+}
+
+extension ExpandedView {
+    private func tabs(_ modules: [NotchModule]) -> some View {
+        HStack(spacing: 4) {
+            ForEach(modules) { module in
+                TabButton(module: module, isSelected: module == viewModel.currentModule) {
+                    viewModel.selectedModule = module
+                }
+            }
         }
     }
 }

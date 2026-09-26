@@ -214,8 +214,8 @@ Each feature has the same parts:
 - an optional **compact view** for the live activity
 - a **settings pane**
 
-The modules are listed in one `enum NotchModule { music, shelf, pomodoro }`, which drives the
-tab bar, the enable/disable toggles, and tab order. Adding a module means adding one case and one
+The modules are listed in one `enum NotchModule { music, shelf, pomodoro, calendar, battery,
+system }`, which drives the tab bar, the enable/disable toggles, and tab order. Adding a module means adding one case and one
 folder.
 
 ### 6.1 Music (Spotify and Apple Music)
@@ -368,7 +368,7 @@ the moment it changes, and the notch updates live as you adjust it.
 | Behavior | Open on hover or click; hover delay; close delay; hot-zone size; open on file drag; haptics; hide in full-screen apps |
 | Size & shape | Expanded width and height (minimum 560×190 pt, so every tab fits); corner radius; compact wing width (0 = exactly the notch's size); live preview of either shape in the Size pane |
 | Animation | A preset (Smooth, Snappy, Bouncy) or a custom spring |
-| Modules | Turn Music, Shelf, and Pomodoro on or off; drag to reorder tabs; default tab; which live activities appear in compact mode |
+| Modules | Turn each module on or off; drag to reorder tabs; default tab; which live activities appear in compact mode |
 | Appearance | Accent color; background (pure black to match the hardware, or blur); tab labels on or off |
 | Displays | Built-in only, all, or main display; virtual notch size for screens without a notch |
 | Music | Preferred player; album art in compact mode |
@@ -388,6 +388,85 @@ the bottom of the sidebar. You can open it from the menu-bar icon, from the gear
 expanded notch, or by right-clicking the notch (Phase 5). While the Size pane is showing and the
 window is in front, the notch stays open as a live preview.
 
+### 6.5 Next Meeting (v1.1)
+
+- **`CalendarService` (EventKit)** reads today's events and publishes `meetings` and `liveMeeting`.
+  - It reloads on `EKEventStoreChanged`, at midnight, and on wake.
+  - It sleeps until the next moment anything changes, rather than polling.
+  - It skips events you declined and, if you choose, all-day events and calendars you've hidden.
+- **Pure logic, unit-tested:**
+  - `MeetingSchedule` works out:
+    - the next meeting
+    - whether one is in the live-activity window (the lead time before the meeting until
+      5 minutes after it starts)
+    - when to wake next
+    - short texts like "in 4m" and "ends in 20m"
+  - `MeetingLinkFinder` finds Zoom, Google Meet, Teams, Webex, and FaceTime links in the
+    event's URL, location, or notes, in that order.
+- **Views:**
+  - **Tab:** the next meeting with a big **Join** button, then the rest of today.
+  - **Wings:** a calendar-colored dot and "4m", then "now".
+- **Permission:** Calendars (full access), requested only when you press the button in the tab.
+- **Privacy:** events never leave the Mac, and titles are never logged.
+
+### 6.6 Battery & Charging (v1.1)
+
+- **`BatteryService` is event-driven.**
+  - It listens with `IOPSNotificationCreateRunLoopSource`, so macOS tells us when anything
+    changes and nothing polls.
+  - Low Power Mode comes from `NSProcessInfoPowerStateDidChange`.
+- **What it reads:**
+  - the adapter's watts (`IOPSCopyExternalPowerAdapterDetails`)
+  - health and cycle count (the `AppleSmartBattery` registry entry, whose `BatteryData`
+    contains the design and nominal capacities)
+- **Pure logic, unit-tested:**
+  - `BatterySnapshot` parses the power-source report. It includes the "holding at 80%" state:
+    plugged in, not charging, not full, which is macOS's Optimized Charging.
+  - `BatteryAlerts` decides:
+    - the 4-second charging flash, only on an actual plug-in
+    - the low-battery warning, with 2% of hysteresis so it doesn't flicker
+- **Views:**
+  - **Tab:** a gauge, status, charger, health, and Low Power Mode.
+  - **Wings:** a bolt and the percentage while flashing, and red while low.
+
+### 6.7 System Monitor (v1.1)
+
+- **`SystemMonitor` samples only while something needs it.**
+  - **The System tab is on screen:** everything, once a second.
+  - **"Big transfers beside the notch" is on:** network only, every 2 s.
+  - **Otherwise:** nothing runs at all.
+- **Sources:**
+  - **CPU:** tick counts from `host_statistics`.
+  - **Memory:** the same figure as Activity Monitor (app + wired + compressed), from
+    `host_statistics64`.
+  - **Memory pressure:** `kern.memorystatus_vm_pressure_level`.
+  - **Network:** byte counters from `getifaddrs`, for physical interfaces only (`en*`,
+    `pdp_ip*`).
+  - **Free disk space:** only when the tab opens and then every 30 s, because it costs about
+    15 ms per read.
+- **Pure logic, unit-tested (`SystemMath`):**
+  - CPU percentage
+  - network rate, including 32-bit counter wrap-around
+  - byte texts
+  - `TransferDetector`, which needs 2 fast readings to start and 2 slow ones to stop
+- **Measured cost:** about 0.8% CPU while the tab samples, and 0% when it's closed.
+
+### 6.8 Live activities when several things happen at once
+
+`LiveActivity.resolve` takes one `Candidates` struct and picks the most important:
+
+1. charging flash
+2. meeting soon
+3. running timer
+4. playing music
+5. recently paused music
+6. low battery
+7. big transfer
+8. paused timer
+
+A hidden module never shows beside the notch. With more than 3 tabs on, the tab bar splits
+across both sides of the notch so it fits at the minimum width.
+
 ---
 
 ## 7. Data and persistence
@@ -398,6 +477,8 @@ window is in front, the notch stays open as a live preview.
 | Shelf items | `ShelfStore` | `~/Library/Application Support/EasyNotch/shelf.json` |
 | Running Pomodoro | `PomodoroController` | UserDefaults (the phase and `endsAt`) |
 | Now playing | `NowPlayingService` | Memory only; re-read from the players |
+| Today's meetings | `CalendarService` | Memory only; re-read from EventKit (Calendar's own database) |
+| Battery, system readings | `BatteryService`, `SystemMonitor` | Memory only |
 | Launch at login | macOS (`SMAppService`) | The system; we only read and toggle it |
 
 ---
@@ -409,15 +490,20 @@ window is in front, the notch stays open as a live preview.
 | Automation → Spotify | Play/pause, next, artwork | The first time you use a Spotify control |
 | Automation → Music | The same, for Apple Music | The first time you use a Music control |
 | Notifications | Pomodoro alerts | The first time you start a timer |
-| *(none)* | Hover tracking, drag and drop, AirDrop | Never |
+| Calendars (full access) | Next Meeting | Only when you press "Allow Calendar Access" in the Calendar tab |
+| *(none)* | Hover tracking, drag and drop, AirDrop, battery, system monitor | Never |
 
 **Configuration files:**
 
 - **`Info.plist`**
   - `LSUIElement = YES` (no Dock icon)
   - `NSAppleEventsUsageDescription` (the text shown in the Automation prompt)
+  - `NSCalendarsFullAccessUsageDescription` and `NSCalendarsUsageDescription` (the Calendars
+    prompt)
 - **`EasyNotch.entitlements`**
   - `com.apple.security.automation.apple-events = YES`
+  - `com.apple.security.personal-information.calendars = YES` (the Hardened Runtime blocks
+    Calendars without it, and no prompt appears)
   - no sandbox
 
 **Signing tip:** macOS ties these permissions to the app's code signature. We'll sign with your
@@ -448,16 +534,24 @@ EasyNotch/
 │   │   │                     NowPlayingService, MusicView, MusicCompactView, MusicArtwork
 │   │   ├── Shelf/            ShelfItem, ShelfStore, ShelfThumbnails, ShelfActions,
 │   │   │                     ShelfView, ShelfItemView, FileDragSource
-│   │   └── Pomodoro/         PomodoroEngine, PomodoroController, PomodoroView,
-│   │                         PomodoroCompactView
+│   │   ├── Pomodoro/         PomodoroEngine, PomodoroController, PomodoroView,
+│   │   │                     PomodoroCompactView
+│   │   ├── Calendar/         Meeting, MeetingSchedule, MeetingLinkFinder, CalendarService,
+│   │   │                     CalendarView, MeetingCompactView
+│   │   ├── Battery/          BatterySnapshot, BatteryAlerts, BatteryService, BatteryView,
+│   │   │                     BatteryCompactView
+│   │   └── System/           SystemMath, SystemMonitor, Sparkline, SystemView,
+│   │                         NetworkCompactView
 │   ├── Settings/             AppSettings, SettingsWindowController, SettingsView,
 │   │                         ShortcutRecorder, Panes/ (General, Behavior, Appearance, Size,
-│   │                         Displays, Modules, Music, Shelf, Pomodoro)
+│   │                         Displays, Modules, Music, Shelf, Pomodoro, Calendar, Battery,
+│   │                         System)
 │   ├── Shared/               Log, NotchAccent, HotKeyCenter, FullScreenDetector, LoginItem,
 │   │                         DistributedNotificationObserver, SecondsTimeline, extensions
 │   └── Resources/            Assets.xcassets, Info.plist, EasyNotch.entitlements
 └── EasyNotchTests/           NotchGeometryTests, PomodoroEngineTests, ShelfStoreTests,
-                              NowPlayingServiceTests (using fake players)
+                              NowPlayingServiceTests (using fake players), CalendarTests,
+                              BatteryTests, SystemMathTests, and more
 ```
 
 ---
@@ -476,7 +570,8 @@ EasyNotch/
   - plugging and unplugging a display
   - sleep and wake
   - what happens when a permission is denied
-- **Logging:** `os.Logger` with one category per area (notch, music, shelf, pomodoro). You can
+- **Logging:** `os.Logger` with one category per area (notch, music, shelf, pomodoro, calendar,
+  battery, system). You can
   watch it live in Console.app.
 - **Graceful failure:** a missing permission, a player that isn't running, or a deleted file shows
   a friendly message in the UI and never crashes the app.
@@ -513,6 +608,7 @@ Every phase ends the same way:
 | **4. Shelf + AirDrop** ✅ | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
 | **5. Customization** ✅ | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
 | **6. Polish & ship** ✅ | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |
+| **v1.1 New modules** ✅ | Next Meeting, Battery & Charging, System Monitor (§6.5–6.8) | Three new tabs with settings panes and live activities; the tab bar splits across both wings with more than 3 tabs; live-activity priorities; idle CPU still 0%; QA checklist v1.1 section | M |
 
 **Phase 1 is done when:**
 - the closed notch is invisible on your screen (pixel-matched to 185 × 32)

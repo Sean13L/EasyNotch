@@ -23,6 +23,9 @@ struct CompactView: View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .leading)
         case .music: MusicCompactView(side: .leading)
+        case .meeting: MeetingCompactView(side: .leading)
+        case .battery: BatteryCompactView(side: .leading)
+        case .network: NetworkCompactView(side: .leading)
         case .placeholder: PlaceholderWing()
         }
     }
@@ -31,6 +34,9 @@ struct CompactView: View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .trailing)
         case .music: MusicCompactView(side: .trailing)
+        case .meeting: MeetingCompactView(side: .trailing)
+        case .battery: BatteryCompactView(side: .trailing)
+        case .network: NetworkCompactView(side: .trailing)
         case .placeholder: PlaceholderWing()
         }
     }

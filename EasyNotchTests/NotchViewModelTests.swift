@@ -250,7 +250,7 @@ struct NotchViewModelTests {
                 $0.hiddenModules = ["music"]
             }
             vm.selectedModule = .music
-            #expect(vm.visibleModules == [.pomodoro, .shelf])
+            #expect(vm.visibleModules == [.pomodoro, .shelf, .calendar, .battery, .system])
             #expect(vm.currentModule == .pomodoro)
         }
     }

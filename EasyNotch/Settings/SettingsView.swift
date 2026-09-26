@@ -11,6 +11,9 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case music
     case shelf
     case pomodoro
+    case calendar
+    case battery
+    case system
 
     var id: Self { self }
 
@@ -25,6 +28,9 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .music: "Music"
         case .shelf: "Shelf"
         case .pomodoro: "Pomodoro"
+        case .calendar: "Calendar"
+        case .battery: "Battery"
+        case .system: "System"
         }
     }
 
@@ -39,6 +45,9 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .music: "music.note"
         case .shelf: "tray.full"
         case .pomodoro: "timer"
+        case .calendar: "calendar"
+        case .battery: "battery.75percent"
+        case .system: "gauge.with.dots.needle.33percent"
         }
     }
 }
@@ -47,6 +56,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 struct SettingsView: View {
     let settings: AppSettings
     let nowPlaying: NowPlayingService
+    let calendar: CalendarService
     /// Reports the selected pane, so the window controller can start or stop the notch preview.
     let onPaneChange: (SettingsPane) -> Void
     /// Reports which notch shape the Size pane wants to preview.
@@ -79,6 +89,9 @@ struct SettingsView: View {
             case .size: SizePane(settings: settings, onPreviewChange: onSizePreviewChange)
             case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
             case .shelf: ShelfPane(settings: settings)
+            case .calendar: CalendarPane(settings: settings, calendar: calendar)
+            case .battery: BatteryPane(settings: settings)
+            case .system: SystemPane(settings: settings)
             case .pomodoro: PomodoroPane(settings: settings)
             }
         }
