@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if UserDefaults.standard.bool(forKey: "StartPomodoroOnLaunch"), !services.pomodoro.engine.isActive {
             services.pomodoro.startPauseOrResume()
         }
+        if let path = UserDefaults.standard.string(forKey: "AddToShelf") {
+            services.shelf.add([URL(fileURLWithPath: path)])
+        }
         #endif
     }
 }

@@ -150,3 +150,51 @@ every rebuild.
       tab explains this and offers **Open System Settings**. Titles from broadcasts still appear.
 - [ ] EasyNotch never launches a player by itself, except when you press Play with it closed.
 - [ ] CPU stays around 0% while music plays and the notch is closed.
+
+---
+
+## Phase 4: File shelf and AirDrop
+
+### Dragging files in
+- [ ] Drag a file from Finder toward the notch. The notch opens right away on the Shelf tab,
+      even with a long hover delay. No clipboard or privacy prompt appears.
+- [ ] Drop anywhere on the open notch. The file appears as a thumbnail. Drop several files at
+      once, and a folder. The newest go first; dropping a file that's already there moves it to
+      the front.
+- [ ] Dragging a window, or selecting text near the top of the screen, never opens the notch.
+- [ ] Settings → Shelf → "Open the notch when dragging files near it" off: dragging no longer
+      opens it, but hovering first and then dropping still works.
+
+### Using the files
+- [ ] Drag a tile out into Finder, a browser upload field (Gmail or Google Drive), Slack, and
+      Mail. The notch may close behind you; the drop should still work.
+- [ ] Click to select a tile, ⌘-click to select several. The drag-all handle (stack icon)
+      drags the selection, or everything if nothing is selected.
+- [ ] Double-click opens the file.
+- [ ] Right-click → Open, Quick Look, Show in Finder, Copy (then ⌘V in Finder), AirDrop,
+      Share…, Remove from Shelf. With several selected, each acts on all of them.
+- [ ] The header's Share and Copy buttons work.
+- [ ] The trash button asks "Clear all?" first. Click again to clear. It resets on its own after
+      3 s.
+- [ ] Settings → Shelf → "Remove files after dragging them out":
+  - [ ] Off (default): dragged-out files stay on the shelf.
+  - [ ] On: a file dropped into Finder or an upload field leaves the shelf. Dropping it back
+        onto the notch, or cancelling the drag, keeps it.
+
+### AirDrop
+- [ ] Drop files onto the AirDrop tile. The AirDrop picker opens right away and you can send
+      them to your phone.
+- [ ] Clicking the tile AirDrops the selected files (or all of them).
+
+### Keeping track of files
+- [ ] Quit and reopen EasyNotch: the shelf is unchanged.
+- [ ] Rename a shelf file in Finder: the tile shows the new name the next time the tab opens.
+- [ ] Delete a shelf file (empty the Trash, or just move it to the Trash): its tile dims and
+      says "Missing", and right-click offers only Remove.
+- [ ] The first file from Downloads, Desktop, or Documents triggers one macOS prompt per folder.
+      Allow it, and it never asks again, even after a rebuild.
+- [ ] If access is turned off (System Settings → Privacy & Security → Files & Folders →
+      EasyNotch), those files show "No access" with a lock. Right-click → "Allow Access in
+      System Settings…" opens that page. Settings → Shelf has the same button.
+- [ ] "Keep at most" limits the number of files (the oldest drop off). "Remove files
+      automatically" removes old ones.

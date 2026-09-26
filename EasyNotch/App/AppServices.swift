@@ -4,6 +4,7 @@ final class AppServices {
     let settings = AppSettings()
     let pomodoro: PomodoroController
     let nowPlaying: NowPlayingService
+    let shelf: ShelfStore
     private let mouseTracker = MouseTracker()
     private let screenManager: ScreenManager
     private let settingsWindow: SettingsWindowController
@@ -11,10 +12,11 @@ final class AppServices {
     init() {
         pomodoro = PomodoroController(settings: settings)
         nowPlaying = NowPlayingService(settings: settings)
+        shelf = ShelfStore(settings: settings)
         screenManager = ScreenManager(
             settings: settings,
             mouseTracker: mouseTracker,
-            features: NotchFeatures(pomodoro: pomodoro, nowPlaying: nowPlaying)
+            features: NotchFeatures(pomodoro: pomodoro, nowPlaying: nowPlaying, shelf: shelf)
         )
         settingsWindow = SettingsWindowController(settings: settings, nowPlaying: nowPlaying)
 

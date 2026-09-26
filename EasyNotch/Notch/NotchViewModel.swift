@@ -75,6 +75,28 @@ final class NotchViewModel {
         }
     }
 
+    /// The mouse moved with its button held. A file drag near the notch opens it right away
+    /// (no hover delay) on the Shelf tab. Other drags, like moving a window or selecting text,
+    /// never open it, but can close it.
+    func pointerDragged(to point: CGPoint, carryingFiles: Bool) {
+        guard preview == nil else { return }
+        switch state {
+        case .closed:
+            guard carryingFiles, settings.shelfOpenOnDrag, geometry.dragHotZone.contains(point) else { return }
+            cancelPendingTransition()
+            setState(.open)
+            selectedModule = .shelf
+        case .open:
+            // Be forgiving while carrying files, so the notch doesn't close just before a drop.
+            let keepOpen = carryingFiles ? geometry.openRect.union(geometry.dragHotZone) : geometry.openRect
+            if keepOpen.contains(point) {
+                cancelPendingTransition()
+            } else {
+                schedule(.closed, after: settings.closeDelay)
+            }
+        }
+    }
+
     /// A click anywhere outside the open notch closes it right away.
     func mouseDown(at point: CGPoint) {
         guard state == .open, preview == nil, !geometry.openRect.contains(point) else { return }

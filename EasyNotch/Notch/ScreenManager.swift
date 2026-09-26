@@ -28,6 +28,9 @@ final class ScreenManager {
         mouseTracker.onMouseDown = { [weak self] point in
             self?.controllers.values.forEach { $0.viewModel.mouseDown(at: point) }
         }
+        mouseTracker.onDrag = { [weak self] point, carryingFiles in
+            self?.controllers.values.forEach { $0.viewModel.pointerDragged(to: point, carryingFiles: carryingFiles) }
+        }
         mouseTracker.start()
 
         observers.append(NotificationCenter.default.addObserver(

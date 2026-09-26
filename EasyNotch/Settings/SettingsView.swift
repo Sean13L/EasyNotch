@@ -5,6 +5,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case behavior
     case size
     case music
+    case shelf
     case pomodoro
 
     var id: Self { self }
@@ -14,6 +15,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .behavior: "Behavior"
         case .size: "Size"
         case .music: "Music"
+        case .shelf: "Shelf"
         case .pomodoro: "Pomodoro"
         }
     }
@@ -23,6 +25,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .behavior: "cursorarrow.motionlines"
         case .size: "arrow.up.left.and.arrow.down.right"
         case .music: "music.note"
+        case .shelf: "tray.full"
         case .pomodoro: "timer"
         }
     }
@@ -59,6 +62,7 @@ struct SettingsView: View {
             case .behavior: BehaviorPane(settings: settings)
             case .size: SizePane(settings: settings, onPreviewChange: onSizePreviewChange)
             case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
+            case .shelf: ShelfPane(settings: settings)
             case .pomodoro: PomodoroPane(settings: settings)
             }
         }

@@ -12,9 +12,10 @@ struct NotchViewModelTests {
     let leftWing = CGPoint(x: 610, y: 970)             // beside the notch, inside the compact wings
 
     /// A view model with instant transitions and haptics off.
-    func makeViewModel(_ defaults: UserDefaults, hoverDelay: Double = 0) -> NotchViewModel {
+    func makeViewModel(_ defaults: UserDefaults, hoverDelay: Double = 0, openOnDrag: Bool = true) -> NotchViewModel {
         let settings = AppSettings(defaults: defaults)
         settings.hoverDelay = hoverDelay
+        settings.shelfOpenOnDrag = openOnDrag
         settings.closeDelay = 0
         settings.hapticsEnabled = false
         let geometry = NotchGeometryTests.geometry()!
@@ -160,6 +161,51 @@ struct NotchViewModelTests {
             vm.liveActivityProvider = { .pomodoro }
             vm.pointerMoved(to: notchCenter)
             #expect(vm.selectedModule == .pomodoro)
+        }
+    }
+
+    // MARK: - Dragging files
+
+    @Test func draggingFilesNearTheNotchOpensTheShelfInstantly() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults, hoverDelay: 1)  // no waiting, even with a delay set
+            vm.selectedModule = .music
+            vm.pointerDragged(to: notchCenter, carryingFiles: true)
+            #expect(vm.state == .open)
+            #expect(vm.selectedModule == .shelf)
+        }
+    }
+
+    @Test func otherDragsNeverOpenTheNotch() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.pointerDragged(to: notchCenter, carryingFiles: false)  // e.g. moving a window
+            #expect(vm.state == .closed)
+        }
+    }
+
+    @Test func dragOpeningCanBeTurnedOff() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults, openOnDrag: false)
+            vm.pointerDragged(to: notchCenter, carryingFiles: true)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    @Test func filesDraggedElsewhereDoNotOpenTheNotch() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.pointerDragged(to: desktop, carryingFiles: true)
+            #expect(vm.state == .closed)
+        }
+    }
+
+    @Test func draggingAwayFromTheOpenNotchClosesIt() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.pointerDragged(to: notchCenter, carryingFiles: true)
+            vm.pointerDragged(to: desktop, carryingFiles: true)
+            #expect(vm.state == .closed)
         }
     }
 

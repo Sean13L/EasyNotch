@@ -2,9 +2,11 @@ import SwiftUI
 
 /// The open notch: a header strip level with the notch (tabs on the left, gear on the
 /// right, a gap in the middle where the hardware notch hides everything), and the selected
-/// module below.
+/// module below. Files dropped anywhere on it go onto the shelf.
 struct ExpandedView: View {
     let viewModel: NotchViewModel
+
+    @Environment(ShelfStore.self) private var shelf
 
     var body: some View {
         let notch = viewModel.geometry.notchRect
@@ -41,12 +43,23 @@ struct ExpandedView: View {
                 switch viewModel.selectedModule {
                 case .music: MusicView()
                 case .pomodoro: PomodoroView()
-                case .shelf: ModulePlaceholder(module: viewModel.selectedModule)
+                case .shelf: ShelfView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(.white)
+        // The whole open notch is a drop target, so you don't have to aim for the shelf.
+        .dropDestination(for: URL.self) { urls, _ in
+            let files = urls.filter(\.isFileURL)
+            guard !files.isEmpty else { return false }
+            shelf.add(files)
+            viewModel.selectedModule = .shelf
+            return true
+        } isTargeted: { isTargeted in
+            shelf.isDropTargeted = isTargeted
+            if isTargeted { viewModel.selectedModule = .shelf }
+        }
     }
 }
 
@@ -64,29 +77,5 @@ private struct TabButton: View {
         }
         .buttonStyle(.plain)
         .help(module.title)
-    }
-}
-
-/// Stand-in content until each module is built.
-private struct ModulePlaceholder: View {
-    let module: NotchModule
-
-    private var phase: Int {
-        switch module {
-        case .music: 3
-        case .shelf, .pomodoro: 4
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: module.systemImage)
-                .font(.title2)
-            Text(module.title)
-                .font(.headline)
-            Text("Coming in Phase \(phase)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
     }
 }

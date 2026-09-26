@@ -18,6 +18,9 @@ nonisolated struct ScreenMetrics: Equatable, Sendable {
 nonisolated struct NotchGeometry: Equatable, Sendable {
     /// Room around the open shape for its drop shadow and top "ears".
     static let shadowPadding: CGFloat = 24
+    /// How far around the notch a file drag opens it. Generous, because you aim less
+    /// precisely while dragging.
+    static let dragMargin: CGFloat = 40
 
     let screenFrame: CGRect
     /// The physical notch (the closed state).
@@ -28,6 +31,8 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
     let compactRect: CGRect
     /// The hover area while the compact state is showing.
     let compactHotZone: CGRect
+    /// Dragging files into this area opens the notch.
+    let dragHotZone: CGRect
     /// The expanded panel (the open state).
     let openRect: CGRect
     /// The window's frame: room for every state plus the shadow, kept on screen.
@@ -52,6 +57,7 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
         let compact = notchRect.insetBy(dx: -max(0, compactWingWidth), dy: 0)
         compactRect = compact.intersection(screen)
         compactHotZone = compactRect.insetBy(dx: -hotZoneMargin, dy: -hotZoneMargin)
+        dragHotZone = compactRect.insetBy(dx: -Self.dragMargin, dy: -Self.dragMargin)
 
         // Never smaller than the notch, never wider or taller than the screen.
         let width = min(max(openSize.width, notchWidth), screen.width)

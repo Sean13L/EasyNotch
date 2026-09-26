@@ -29,6 +29,11 @@ extension NumericSetting {
     // Music
     /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
     static let musicPausedLinger = NumericSetting(key: "music.pausedLingerSeconds", defaultValue: 60, range: -1...3600)
+
+    // Shelf
+    static let shelfMaxItems = NumericSetting(key: "shelf.maxItems", defaultValue: 20, range: 5...50)
+    /// Remove items this many days after they were added; 0 means never.
+    static let shelfAutoRemoveDays = NumericSetting(key: "shelf.autoRemoveDays", defaultValue: 0, range: 0...30)
 }
 
 /// Describes one on/off setting: where it's saved and its default.
@@ -45,6 +50,9 @@ extension BoolSetting {
     static let pomodoroNotifications = BoolSetting(key: "pomodoro.notifications", defaultValue: true)
     static let pomodoroSoundEnabled = BoolSetting(key: "pomodoro.soundEnabled", defaultValue: true)
     static let musicInNotch = BoolSetting(key: "music.showInNotch", defaultValue: true)
+    static let shelfOpenOnDrag = BoolSetting(key: "shelf.openOnDrag", defaultValue: true)
+    static let shelfConfirmClear = BoolSetting(key: "shelf.confirmClear", defaultValue: true)
+    static let shelfRemoveAfterDragOut = BoolSetting(key: "shelf.removeAfterDragOut", defaultValue: false)
 }
 
 /// Describes one text setting: where it's saved and its default.
@@ -106,6 +114,17 @@ final class AppSettings {
     /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
     var musicPausedLinger: Double { didSet { save(musicPausedLinger, .musicPausedLinger) } }
 
+    // MARK: Shelf
+
+    /// Open the notch on the Shelf tab when files are dragged near it.
+    var shelfOpenOnDrag: Bool { didSet { save(shelfOpenOnDrag, .shelfOpenOnDrag) } }
+    var shelfMaxItems: Double { didSet { save(shelfMaxItems, .shelfMaxItems) } }
+    /// Days before items are removed automatically; 0 means never.
+    var shelfAutoRemoveDays: Double { didSet { save(shelfAutoRemoveDays, .shelfAutoRemoveDays) } }
+    var shelfConfirmClear: Bool { didSet { save(shelfConfirmClear, .shelfConfirmClear) } }
+    /// Take files off the shelf once they've been dragged out and dropped somewhere.
+    var shelfRemoveAfterDragOut: Bool { didSet { save(shelfRemoveAfterDragOut, .shelfRemoveAfterDragOut) } }
+
     // MARK: Storage
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -132,6 +151,11 @@ final class AppSettings {
         musicPreferredPlayer = Self.load(.musicPreferredPlayer, from: defaults)
         musicInNotch = Self.load(.musicInNotch, from: defaults)
         musicPausedLinger = Self.load(.musicPausedLinger, from: defaults)
+        shelfOpenOnDrag = Self.load(.shelfOpenOnDrag, from: defaults)
+        shelfMaxItems = Self.load(.shelfMaxItems, from: defaults)
+        shelfAutoRemoveDays = Self.load(.shelfAutoRemoveDays, from: defaults)
+        shelfConfirmClear = Self.load(.shelfConfirmClear, from: defaults)
+        shelfRemoveAfterDragOut = Self.load(.shelfRemoveAfterDragOut, from: defaults)
     }
 
     func resetToDefaults() {
@@ -155,6 +179,11 @@ final class AppSettings {
         musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue
         musicInNotch = BoolSetting.musicInNotch.defaultValue
         musicPausedLinger = NumericSetting.musicPausedLinger.defaultValue
+        shelfOpenOnDrag = BoolSetting.shelfOpenOnDrag.defaultValue
+        shelfMaxItems = NumericSetting.shelfMaxItems.defaultValue
+        shelfAutoRemoveDays = NumericSetting.shelfAutoRemoveDays.defaultValue
+        shelfConfirmClear = BoolSetting.shelfConfirmClear.defaultValue
+        shelfRemoveAfterDragOut = BoolSetting.shelfRemoveAfterDragOut.defaultValue
     }
 
     private func save(_ value: Double, _ setting: NumericSetting) {

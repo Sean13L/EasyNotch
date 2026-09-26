@@ -24,6 +24,11 @@ struct AppSettingsTests {
             #expect(settings.pomodoroSoundEnabled)
             #expect(settings.pomodoroSound == "Glass")
             #expect(settings.musicPausedLinger == 60)
+            #expect(settings.shelfOpenOnDrag)
+            #expect(settings.shelfMaxItems == 20)
+            #expect(settings.shelfAutoRemoveDays == 0)
+            #expect(settings.shelfConfirmClear)
+            #expect(!settings.shelfRemoveAfterDragOut)
         }
     }
 

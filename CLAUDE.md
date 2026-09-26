@@ -21,7 +21,11 @@ sentence or two, and prefer simple, readable code over clever code.
   The owner should walk through `docs/QA_CHECKLIST.md` Phase 2.
 - **Phase 3 (music): committed.** 65 tests pass. Real playback with Automation permission is
   still to be checked by the owner (`docs/QA_CHECKLIST.md` Phase 3).
-- **Next:** Phase 4, the file shelf and AirDrop.
+- **Phase 4 (shelf + AirDrop): done.** 94 tests pass, and the owner tested drag in and out,
+  AirDrop, Share, and Quick Look. Decided: keep links and ask once for Downloads, Desktop, and
+  Documents. That macOS prompt is expected.
+- **Every feature from the original request is built.** Next: Phase 5 (customization depth),
+  then Phase 6 (polish and a GitHub release).
 - **Signing:** Apple Development, owner's Personal Team `Y4Q9CP9K8V`. If a build ever says a
   certificate or profile is missing, add `-allowProvisioningUpdates`.
 - **Decisions:** approved defaults plus GitHub Releases distribution; see `docs/BLUEPRINT.md`
@@ -41,6 +45,8 @@ xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -configuration Debug -
 xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -derivedDataPath build test
 killall EasyNotch; open build/Build/Products/Debug/EasyNotch.app
 open build/Build/Products/Debug/EasyNotch.app --args -OpenSettingsOnLaunch YES   # Debug only: opens Settings at launch
+# Debug only: put a file on the shelf (writes the real shelf.json; delete it after testing)
+open build/Build/Products/Debug/EasyNotch.app --args -AddToShelf /path/to/file
 # Debug only: start a 1-minute timer without saving any settings (launch args override UserDefaults for one run)
 open build/Build/Products/Debug/EasyNotch.app --args -StartPomodoroOnLaunch YES -pomodoro.focusMinutes 1 -pomodoro.notifications NO
 ```
@@ -97,6 +103,10 @@ Test runs write real timer state; clean up with
 - **Listen to other apps' distributed notifications with `DistributedNotificationObserver`**
   (`.deliverImmediately`). The block-based API holds notifications while EasyNotch is inactive,
   which is nearly always.
+- **Drag detection must never read another app's pasteboard contents.** Only the change counter
+  and the list of types (see `FileDragDetector`), so no privacy prompt appears.
+- **Present system UI (AirDrop, Quick Look) only after `NSApp.activate()`.** The notch panel
+  can't become key.
 - **Features never reference each other.** Helpers shared between features go in `Shared/`
   (e.g. `SecondsTimeline`).
 - **Continuous decorative motion uses Core Animation layers, not SwiftUI.** See `AudioBars`:

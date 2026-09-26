@@ -75,7 +75,7 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 ├────────────────────────┬────────────────────────┬──────────────────────────┤
 │ MUSIC                  │ SHELF                  │ POMODORO                 │
 │ NowPlayingService      │ ShelfStore             │ PomodoroEngine           │
-│ MediaPlayerSource      │ SharingService         │ PomodoroController       │
+│ MediaPlayerSource      │ ShelfActions           │ PomodoroController       │
 │ Spotify, AppleMusic    │ ShelfView              │ PomodoroView             │
 │ MusicView              │ ShelfItemView          │ PomodoroCompactView      │
 │ MusicCompactView       │                        │                          │
@@ -305,8 +305,26 @@ folder.
   the item survives the file being renamed or moved.
 - `ShelfStore` (`@Observable`) saves to `~/Library/Application Support/EasyNotch/shelf.json`,
   removes duplicates, caps the number of items, and can auto-clear after N days.
-- AirDrop uses `NSSharingService(named: .sendViaAirDrop)` and the Share menu uses
-  `NSSharingServicePicker`.
+- **AirDrop, Share, Quick Look.** `ShelfActions` handles them:
+  - AirDrop uses `NSSharingService(named: .sendViaAirDrop)`.
+  - The Share menu is SwiftUI's `ShareLink`.
+  - Quick Look uses `QLPreviewPanel`.
+
+  Each activates the app first, because agent apps are never active on their own.
+- **Spotting a file drag while the notch is closed.** `MouseTracker` watches drags system-wide.
+  `FileDragDetector` (tested) compares the drag pasteboard's change counter with its value at
+  mouse-down, then checks only the pasteboard's list of *types*, never its contents. A file
+  drag near the notch opens it instantly on the Shelf tab. Moving windows and selecting text
+  never open it.
+- **Dragging out.** Tiles and the drag-all handle use AppKit drag sessions
+  (`FileDragSource.swift`), because SwiftUI's own dragging can't say whether a drop happened.
+  The tiles are started from a SwiftUI drag gesture through an invisible `FileDragAnchor`.
+  Dragging a selected tile carries the whole selection. With "Remove files after dragging them
+  out" on (off by default), files leave the shelf once dropped somewhere other than the notch.
+- **Protected folders** (decided: keep links, ask once). macOS asks once per protected folder
+  (Downloads, Desktop, Documents) before EasyNotch can reopen files there. If access is denied,
+  tiles show **No access** rather than "Missing", with a shortcut to System Settings → Files &
+  Folders. The store tells the two apart by whether reading the file's details is refused.
 - If a file has been deleted since you added it, its item is greyed out and offers "Remove".
 - **Later:** text snippets and links, images dragged from browsers ("file promises"), and a mode
   that copies files into the shelf.
@@ -419,7 +437,8 @@ EasyNotch/
 │   │   ├── Music/            PlayerProfile, PlayerSnapshot, Spotify, AppleMusic,
 │   │   │                     AppleScriptRunner, MediaPlayerSource, ActivePlayerPicker,
 │   │   │                     NowPlayingService, MusicView, MusicCompactView, MusicArtwork
-│   │   ├── Shelf/            ShelfItem, ShelfStore, SharingService, ShelfView, ShelfItemView
+│   │   ├── Shelf/            ShelfItem, ShelfStore, ShelfThumbnails, ShelfActions,
+│   │   │                     ShelfView, ShelfItemView, FileDragSource
 │   │   └── Pomodoro/         PomodoroEngine, PomodoroController, PomodoroView,
 │   │                         PomodoroCompactView
 │   ├── Settings/             AppSettings, SettingsWindowController, SettingsView, Panes/
@@ -479,7 +498,7 @@ Every phase ends the same way:
 | **1. Notch shell** | The core window | See the list below | L |
 | **2. Pomodoro** ✅ | First real module (no permissions, pure logic); also adds the compact live-activity state. Defaults: breaks start automatically, focus waits for Start | The full focus → break → long-break cycle works; pause/skip/reset work; a notification and sound play at the end; timing stays accurate after sleep; the compact ring shows; settings pane; engine unit tests | M |
 | **3. Music** ✅ | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
-| **4. Shelf + AirDrop** | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
+| **4. Shelf + AirDrop** ✅ | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
 | **5. Customization** | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
 | **6. Polish & ship** | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |
 

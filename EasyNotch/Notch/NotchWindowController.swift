@@ -5,6 +5,7 @@ import SwiftUI
 struct NotchFeatures {
     let pomodoro: PomodoroController
     let nowPlaying: NowPlayingService
+    let shelf: ShelfStore
 }
 
 /// Owns the notch window for one screen and keeps it in sync with the view model and the
@@ -33,6 +34,7 @@ final class NotchWindowController {
         let rootView = NotchRootView(viewModel: viewModel)
             .environment(features.pomodoro)
             .environment(features.nowPlaying)
+            .environment(features.shelf)
         let hostingView = NotchHostingView(rootView: rootView)
         // Without this, SwiftUI would resize the window to fit its content; we size it ourselves.
         hostingView.sizingOptions = []
