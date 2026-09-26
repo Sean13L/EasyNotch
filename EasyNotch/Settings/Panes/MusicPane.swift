@@ -15,6 +15,16 @@ struct MusicPane: View {
                     }
                 }
                 Toggle("Show what's playing beside the notch", isOn: $settings.musicInNotch)
+                Picker("After pausing, keep showing it for", selection: $settings.musicPausedLinger) {
+                    Text("Hide right away").tag(0.0)
+                    Text("10 seconds").tag(10.0)
+                    Text("30 seconds").tag(30.0)
+                    Text("1 minute").tag(60.0)
+                    Text("5 minutes").tag(300.0)
+                    Text("15 minutes").tag(900.0)
+                    Text("Until the player quits").tag(PausedTrackLinger.forever)
+                }
+                .disabled(!settings.musicInNotch)
             }
 
             Section {

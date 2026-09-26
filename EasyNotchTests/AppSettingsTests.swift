@@ -23,6 +23,7 @@ struct AppSettingsTests {
             #expect(settings.pomodoroNotifications)
             #expect(settings.pomodoroSoundEnabled)
             #expect(settings.pomodoroSound == "Glass")
+            #expect(settings.musicPausedLinger == 60)
         }
     }
 
@@ -71,11 +72,11 @@ struct AppSettingsTests {
         withIsolatedDefaults { defaults in
             defaults.set(300.0, forKey: NumericSetting.expandedWidth.key)
             defaults.set(100.0, forKey: NumericSetting.expandedHeight.key)
-            defaults.set(10.0, forKey: NumericSetting.compactWingWidth.key)
+            defaults.set(-5.0, forKey: NumericSetting.compactWingWidth.key)
             let settings = AppSettings(defaults: defaults)
             #expect(settings.expandedWidth == 560)
             #expect(settings.expandedHeight == 190)
-            #expect(settings.compactWingWidth == 48)
+            #expect(settings.compactWingWidth == 0)  // never narrower than the notch itself
         }
     }
 

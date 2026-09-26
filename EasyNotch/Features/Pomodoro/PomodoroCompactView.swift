@@ -27,11 +27,14 @@ struct PomodoroCompactView: View {
                             .foregroundStyle(engine.phase.color)
                     }
                 }
-                .frame(width: 16, height: 16)
+                .frame(maxWidth: 16, maxHeight: 16)
+                .aspectRatio(1, contentMode: .fit)  // shrinks in narrow wings
             case .trailing:
                 Text(PomodoroClock.string(for: engine.remaining(at: now, config: config)))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)  // shrinks in narrow wings
                     .foregroundStyle(engine.isRunning ? .white : .secondary)
             }
         }

@@ -13,7 +13,7 @@ final class ScreenManager {
     private let features: NotchFeatures
     private var controllers: [CGDirectDisplayID: NotchWindowController] = [:]
     private var observers: [NSObjectProtocol] = []
-    private var isPreviewing = false
+    private var preview: SizePreview?
 
     init(settings: AppSettings, mouseTracker: MouseTracker, features: NotchFeatures) {
         self.settings = settings
@@ -44,10 +44,11 @@ final class ScreenManager {
         syncScreens()
     }
 
-    /// Holds every notch open (or lets them close again) while the Size settings are showing.
-    func setPreview(_ isPreviewing: Bool) {
-        self.isPreviewing = isPreviewing
-        controllers.values.forEach { $0.viewModel.setPinnedOpen(isPreviewing) }
+    /// Holds every notch in the previewed shape while the Size settings are showing, or lets
+    /// them behave normally again (`nil`).
+    func setPreview(_ preview: SizePreview?) {
+        self.preview = preview
+        controllers.values.forEach { $0.viewModel.setPreview(preview) }
     }
 
     private func syncScreens() {
@@ -60,7 +61,7 @@ final class ScreenManager {
             } else if let controller = NotchWindowController(screen: screen, settings: settings, features: features) {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
                 controller.viewModel.liveActivityProvider = liveActivityProvider
-                controller.viewModel.setPinnedOpen(isPreviewing)
+                controller.viewModel.setPreview(preview)
                 controllers[id] = controller
             }
         }

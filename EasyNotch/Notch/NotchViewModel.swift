@@ -13,9 +13,9 @@ final class NotchViewModel {
     private(set) var state: NotchState = .closed
     private(set) var geometry: NotchGeometry
     var selectedModule: NotchModule = .music
-    /// While true, the notch stays open no matter where the pointer goes. The Size settings
-    /// pane uses this so you can watch the notch change as you drag the sliders.
-    private(set) var isPinnedOpen = false
+    /// Set while the Size settings pane is showing, so you can watch the notch change as you
+    /// drag its sliders. The pointer is ignored during a preview.
+    private(set) var preview: SizePreview?
 
     /// Which live activity (if any) should show beside the closed notch. Set by `AppServices`,
     /// so the notch never needs to know about individual features.
@@ -42,14 +42,24 @@ final class NotchViewModel {
 
     var presentation: NotchPresentation {
         if state == .open { return .open }
+        if preview == .compact {
+            // Show the wings even when nothing is playing, so their width can be judged.
+            return .compact(liveActivity ?? .placeholder)
+        }
         if let liveActivity { return .compact(liveActivity) }
         return .closed
     }
 
     func pointerMoved(to point: CGPoint) {
-        guard !isPinnedOpen else { return }
+        guard preview == nil else { return }
         switch state {
         case .closed:
+            // Mouse moves arrive constantly; skip the rest unless the pointer is near the notch.
+            // (The compact hot zone always contains the plain one.)
+            guard geometry.compactHotZone.contains(point) else {
+                cancelPendingTransition()
+                return
+            }
             let hotZone = liveActivity == nil ? geometry.hotZone : geometry.compactHotZone
             if hotZone.contains(point) {
                 schedule(.open, after: settings.hoverDelay)
@@ -67,21 +77,21 @@ final class NotchViewModel {
 
     /// A click anywhere outside the open notch closes it right away.
     func mouseDown(at point: CGPoint) {
-        guard state == .open, !isPinnedOpen, !geometry.openRect.contains(point) else { return }
+        guard state == .open, preview == nil, !geometry.openRect.contains(point) else { return }
         close()
     }
 
     func close() {
-        guard !isPinnedOpen else { return }
+        guard preview == nil else { return }
         cancelPendingTransition()
         setState(.closed)
     }
 
-    func setPinnedOpen(_ pinned: Bool) {
-        guard pinned != isPinnedOpen else { return }
-        isPinnedOpen = pinned
+    func setPreview(_ newPreview: SizePreview?) {
+        guard newPreview != preview else { return }
+        preview = newPreview
         cancelPendingTransition()
-        setState(pinned ? .open : .closed)
+        setState(newPreview == .expanded ? .open : .closed)
     }
 
     func showSettings() {
@@ -118,11 +128,11 @@ final class NotchViewModel {
         guard newState != state else { return }
         state = newState
         // Opening from a live activity shows that activity's tab, like tapping the Dynamic Island.
-        if newState == .open, !isPinnedOpen, let liveActivity {
-            selectedModule = liveActivity.module
+        if newState == .open, preview == nil, let module = liveActivity?.module {
+            selectedModule = module
         }
         Log.notch.debug("Notch \(String(describing: newState), privacy: .public)")
-        if newState == .open, settings.hapticsEnabled, !isPinnedOpen {
+        if newState == .open, settings.hapticsEnabled, preview == nil {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
         onStateChange?(newState)

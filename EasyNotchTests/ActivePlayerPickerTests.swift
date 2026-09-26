@@ -65,9 +65,13 @@ struct ActivePlayerPickerTests {
     // MARK: - What shows beside the notch
 
     @Test func liveActivityPriority() {
-        #expect(LiveActivity.resolve(timerRunning: true, timerPaused: false, musicPlaying: true) == .pomodoro)
-        #expect(LiveActivity.resolve(timerRunning: false, timerPaused: true, musicPlaying: true) == .music)
-        #expect(LiveActivity.resolve(timerRunning: false, timerPaused: true, musicPlaying: false) == .pomodoro)
-        #expect(LiveActivity.resolve(timerRunning: false, timerPaused: false, musicPlaying: false) == nil)
+        func resolve(running: Bool = false, paused: Bool = false, playing: Bool = false, recentlyPaused: Bool = false) -> LiveActivity? {
+            LiveActivity.resolve(timerRunning: running, timerPaused: paused, musicPlaying: playing, musicRecentlyPaused: recentlyPaused)
+        }
+        #expect(resolve(running: true, playing: true) == .pomodoro)
+        #expect(resolve(paused: true, playing: true) == .music)
+        #expect(resolve(paused: true, recentlyPaused: true) == .music)
+        #expect(resolve(paused: true) == .pomodoro)
+        #expect(resolve() == nil)
     }
 }

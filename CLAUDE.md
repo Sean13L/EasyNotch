@@ -101,6 +101,8 @@ Test runs write real timer state; clean up with
   (e.g. `SecondsTimeline`).
 - **Continuous decorative motion uses Core Animation layers, not SwiftUI.** See `AudioBars`:
   the render server animates them at no app CPU cost.
+- **Wing width can be 0, so compact content must shrink** (`.minimumScaleFactor`, max frames),
+  and the wings clip.
 - **Minimum open size is 560×190 pt, set by the Music tab's layout.** If a tab's layout grows,
   re-check it at the minimum and raise `NumericSetting.expandedWidth/Height` if needed.
 - **Idle CPU must stay near 0%.** No always-running timers or polling; stay event-driven.

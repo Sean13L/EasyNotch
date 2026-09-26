@@ -2,21 +2,30 @@
 enum LiveActivity: Equatable {
     case pomodoro
     case music
+    /// Empty wings, shown only while previewing the live activity width in Settings.
+    case placeholder
 
     /// The tab to show when the notch opens from this activity.
-    var module: NotchModule {
+    var module: NotchModule? {
         switch self {
         case .pomodoro: .pomodoro
         case .music: .music
+        case .placeholder: nil
         }
     }
 
-    /// Picks what to show when several things are going on. A running timer wins because it's
-    /// time-sensitive, then playing music, then a paused timer. Each flag should already
-    /// account for the user's "show beside the notch" settings.
-    static func resolve(timerRunning: Bool, timerPaused: Bool, musicPlaying: Bool) -> LiveActivity? {
+    /// Picks what to show when several things are going on, in order:
+    /// 1. a running timer (it's time-sensitive)
+    /// 2. playing music
+    /// 3. music that was just paused
+    /// 4. a paused timer
+    ///
+    /// Each flag should already account for the user's "show beside the notch" settings.
+    static func resolve(
+        timerRunning: Bool, timerPaused: Bool, musicPlaying: Bool, musicRecentlyPaused: Bool
+    ) -> LiveActivity? {
         if timerRunning { return .pomodoro }
-        if musicPlaying { return .music }
+        if musicPlaying || musicRecentlyPaused { return .music }
         if timerPaused { return .pomodoro }
         return nil
     }

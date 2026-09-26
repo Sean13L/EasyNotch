@@ -20,8 +20,8 @@ final class AppServices {
 
         // Wire the pieces together now that they all exist.
         screenManager.onShowSettings = { [weak self] in self?.showSettings() }
-        settingsWindow.onPreviewChange = { [weak self] isPreviewing in
-            self?.screenManager.setPreview(isPreviewing)
+        settingsWindow.onPreviewChange = { [weak self] preview in
+            self?.screenManager.setPreview(preview)
         }
         // What appears beside the closed notch.
         screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying] in
@@ -29,7 +29,8 @@ final class AppServices {
             return LiveActivity.resolve(
                 timerRunning: showTimer && pomodoro.engine.isRunning,
                 timerPaused: showTimer && !pomodoro.engine.isRunning,
-                musicPlaying: settings.musicInNotch && nowPlaying.isPlaying
+                musicPlaying: settings.musicInNotch && nowPlaying.isPlaying,
+                musicRecentlyPaused: settings.musicInNotch && nowPlaying.showsPausedTrack
             )
         }
     }

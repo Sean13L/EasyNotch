@@ -34,6 +34,8 @@ struct SettingsView: View {
     let nowPlaying: NowPlayingService
     /// Reports the selected pane, so the window controller can start or stop the notch preview.
     let onPaneChange: (SettingsPane) -> Void
+    /// Reports which notch shape the Size pane wants to preview.
+    let onSizePreviewChange: (SizePreview) -> Void
 
     @State private var selection: SettingsPane? = .behavior
     @State private var isConfirmingReset = false
@@ -55,7 +57,7 @@ struct SettingsView: View {
         } detail: {
             switch pane {
             case .behavior: BehaviorPane(settings: settings)
-            case .size: SizePane(settings: settings)
+            case .size: SizePane(settings: settings, onPreviewChange: onSizePreviewChange)
             case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
             case .pomodoro: PomodoroPane(settings: settings)
             }

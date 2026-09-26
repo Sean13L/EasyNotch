@@ -45,6 +45,11 @@ the README).
       Switching to another pane or another app lets it close.
 - [ ] At the smallest width and height (560 × 190), check the Music and Pomodoro tabs: nothing
       overlaps or gets cut off.
+- [ ] Dragging **Live activity width** switches the preview to the closed notch with its wings.
+      Faint bars show the wing size when nothing is playing or timing. Dragging Width or Height
+      switches back to the open notch.
+- [ ] Live activity width goes down to 0, where the closed notch is exactly the hardware notch.
+      In narrow wings the content shrinks and never spills outside them.
 - [ ] **Restore Defaults…** asks for confirmation first, then resets everything.
 - [ ] Quit and relaunch: your settings are kept.
 - [ ] ⌘W closes the Settings window.
@@ -127,6 +132,10 @@ every rebuild.
 - [ ] The volume slider changes the app's volume.
 - [ ] Shuffle toggles. Repeat cycles off → all → one (Music) or on/off (Spotify).
 - [ ] The app icon (top right) opens the player.
+
+- [ ] Pause the music. The wings stay up with the cover art and resting bars for the time set
+      in Settings → Music → "After pausing, keep showing it for", then disappear. Resuming
+      brings the moving bars back.
 
 ### Several players
 - [ ] With Spotify and Music both open, the one that's playing is shown. The other player's

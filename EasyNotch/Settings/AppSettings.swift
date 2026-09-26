@@ -13,17 +13,22 @@ extension NumericSetting {
     static let hoverDelay = NumericSetting(key: "notch.hoverDelay", defaultValue: 0.15, range: 0...1)
     static let closeDelay = NumericSetting(key: "notch.closeDelay", defaultValue: 0.15, range: 0...1.5)
     static let hotZoneMargin = NumericSetting(key: "notch.hotZoneMargin", defaultValue: 8, range: 0...30)
-    // The minimum sizes are the smallest at which every tab's layout still fits (the Music tab
-    // needs the most room). Smaller saved values are raised to these when loaded.
+    // The minimum open size is the smallest at which every tab's layout still fits (the Music
+    // tab needs the most room). Smaller saved values are raised to it when loaded.
     static let expandedWidth = NumericSetting(key: "notch.expandedWidth", defaultValue: 640, range: 560...900)
     static let expandedHeight = NumericSetting(key: "notch.expandedHeight", defaultValue: 200, range: 190...400)
-    static let compactWingWidth = NumericSetting(key: "notch.compactWingWidth", defaultValue: 64, range: 48...120)
+    /// Extra width on each side of the notch; 0 makes the closed notch exactly the hardware notch.
+    static let compactWingWidth = NumericSetting(key: "notch.compactWingWidth", defaultValue: 64, range: 0...120)
 
     // Pomodoro (lengths in minutes)
     static let focusMinutes = NumericSetting(key: "pomodoro.focusMinutes", defaultValue: 25, range: 1...120)
     static let shortBreakMinutes = NumericSetting(key: "pomodoro.shortBreakMinutes", defaultValue: 5, range: 1...30)
     static let longBreakMinutes = NumericSetting(key: "pomodoro.longBreakMinutes", defaultValue: 15, range: 1...60)
     static let sessionsBeforeLongBreak = NumericSetting(key: "pomodoro.sessionsBeforeLongBreak", defaultValue: 4, range: 2...8)
+
+    // Music
+    /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
+    static let musicPausedLinger = NumericSetting(key: "music.pausedLingerSeconds", defaultValue: 60, range: -1...3600)
 }
 
 /// Describes one on/off setting: where it's saved and its default.
@@ -98,6 +103,8 @@ final class AppSettings {
     var musicPreferredPlayer: String { didSet { save(musicPreferredPlayer, .musicPreferredPlayer) } }
     /// Show what's playing beside the closed notch.
     var musicInNotch: Bool { didSet { save(musicInNotch, .musicInNotch) } }
+    /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
+    var musicPausedLinger: Double { didSet { save(musicPausedLinger, .musicPausedLinger) } }
 
     // MARK: Storage
 
@@ -124,6 +131,7 @@ final class AppSettings {
         pomodoroSound = Self.load(.pomodoroSound, from: defaults)
         musicPreferredPlayer = Self.load(.musicPreferredPlayer, from: defaults)
         musicInNotch = Self.load(.musicInNotch, from: defaults)
+        musicPausedLinger = Self.load(.musicPausedLinger, from: defaults)
     }
 
     func resetToDefaults() {
@@ -146,6 +154,7 @@ final class AppSettings {
         pomodoroSound = StringSetting.pomodoroSound.defaultValue
         musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue
         musicInNotch = BoolSetting.musicInNotch.defaultValue
+        musicPausedLinger = NumericSetting.musicPausedLinger.defaultValue
     }
 
     private func save(_ value: Double, _ setting: NumericSetting) {

@@ -51,6 +51,7 @@ final class AudioBarsView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
+        layer?.masksToBounds = true  // stay inside narrow wings
         for bar in bars {
             bar.backgroundColor = color.cgColor
             layer?.addSublayer(bar)

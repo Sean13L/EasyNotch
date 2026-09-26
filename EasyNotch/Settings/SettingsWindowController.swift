@@ -2,16 +2,17 @@ import AppKit
 import SwiftUI
 
 /// Shows the Settings window, creating it the first time. It also decides when the notch
-/// should be held open as a live preview: only while this window is in front and the Size
-/// pane is selected.
+/// should show a live preview: only while this window is in front and the Size pane is
+/// selected. The Size pane picks which shape to preview.
 final class SettingsWindowController: NSObject, NSWindowDelegate {
-    /// Told whenever the live notch preview should start (true) or stop (false).
-    var onPreviewChange: ((Bool) -> Void)?
+    /// Told whenever the notch preview changes; `nil` means no preview.
+    var onPreviewChange: ((SizePreview?) -> Void)?
 
     private let settings: AppSettings
     private let nowPlaying: NowPlayingService
     private var window: NSWindow?
     private var selectedPane: SettingsPane = .behavior
+    private var sizePreview: SizePreview = .expanded
 
     init(settings: AppSettings, nowPlaying: NowPlayingService) {
         self.settings = settings
@@ -41,14 +42,23 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     // MARK: - Private
 
     private func updatePreview() {
-        onPreviewChange?(window?.isKeyWindow == true && selectedPane == .size)
+        let isPreviewing = window?.isKeyWindow == true && selectedPane == .size
+        onPreviewChange?(isPreviewing ? sizePreview : nil)
     }
 
     private func makeWindow() -> NSWindow {
-        let view = SettingsView(settings: settings, nowPlaying: nowPlaying) { [weak self] pane in
-            self?.selectedPane = pane
-            self?.updatePreview()
-        }
+        let view = SettingsView(
+            settings: settings,
+            nowPlaying: nowPlaying,
+            onPaneChange: { [weak self] pane in
+                self?.selectedPane = pane
+                self?.updatePreview()
+            },
+            onSizePreviewChange: { [weak self] preview in
+                self?.sizePreview = preview
+                self?.updatePreview()
+            }
+        )
         let window = SettingsWindow(contentViewController: NSHostingController(rootView: view))
         window.title = "EasyNotch Settings"
         window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]

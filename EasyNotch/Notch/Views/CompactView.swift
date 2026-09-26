@@ -10,9 +10,11 @@ struct CompactView: View {
         HStack(spacing: 0) {
             leadingWing
                 .frame(maxWidth: .infinity)
+                .clipped()  // very narrow wings crop their content instead of spilling over
             Color.clear.frame(width: notchWidth)
             trailingWing
                 .frame(maxWidth: .infinity)
+                .clipped()
         }
         .foregroundStyle(.white)
     }
@@ -21,6 +23,7 @@ struct CompactView: View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .leading)
         case .music: MusicCompactView(side: .leading)
+        case .placeholder: PlaceholderWing()
         }
     }
 
@@ -28,6 +31,17 @@ struct CompactView: View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .trailing)
         case .music: MusicCompactView(side: .trailing)
+        case .placeholder: PlaceholderWing()
         }
+    }
+}
+
+/// A faint bar spanning the wing, so its width is easy to judge while previewing it.
+private struct PlaceholderWing: View {
+    var body: some View {
+        Capsule()
+            .fill(.white.opacity(0.3))
+            .frame(height: 6)
+            .padding(.horizontal, 8)
     }
 }

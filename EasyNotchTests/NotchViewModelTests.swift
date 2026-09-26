@@ -79,10 +79,10 @@ struct NotchViewModelTests {
         }
     }
 
-    @Test func pinnedOpenIgnoresPointerAndClicksUntilUnpinned() {
+    @Test func expandedPreviewStaysOpenAndIgnoresThePointerUntilItEnds() {
         withIsolatedDefaults { defaults in
             let vm = makeViewModel(defaults)
-            vm.setPinnedOpen(true)
+            vm.setPreview(.expanded)
             #expect(vm.state == .open)
 
             vm.pointerMoved(to: desktop)
@@ -90,16 +90,40 @@ struct NotchViewModelTests {
             vm.close()
             #expect(vm.state == .open)
 
-            vm.setPinnedOpen(false)
+            vm.setPreview(nil)
             #expect(vm.state == .closed)
         }
     }
 
-    @Test func unpinningWhenNotPinnedLeavesAHoverOpenedNotchAlone() {
+    @Test func compactPreviewShowsWingsEvenWithNothingGoingOn() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.setPreview(.compact)
+            #expect(vm.presentation == .compact(.placeholder))
+
+            vm.liveActivityProvider = { .music }
+            #expect(vm.presentation == .compact(.music))  // a real activity is shown if there is one
+
+            vm.pointerMoved(to: notchCenter)
+            #expect(vm.presentation == .compact(.music))  // hovering doesn't open it mid-preview
+        }
+    }
+
+    @Test func switchingFromTheExpandedToTheCompactPreviewClosesTheNotch() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.setPreview(.expanded)
+            vm.setPreview(.compact)
+            #expect(vm.state == .closed)
+            #expect(vm.presentation == .compact(.placeholder))
+        }
+    }
+
+    @Test func endingAPreviewThatWasNeverStartedLeavesAHoverOpenedNotchAlone() {
         withIsolatedDefaults { defaults in
             let vm = makeViewModel(defaults)
             vm.pointerMoved(to: notchCenter)
-            vm.setPinnedOpen(false)
+            vm.setPreview(nil)
             #expect(vm.state == .open)
         }
     }

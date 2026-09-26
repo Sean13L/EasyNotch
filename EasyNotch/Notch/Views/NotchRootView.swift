@@ -64,7 +64,8 @@ private struct NotchShapeLayout {
             // completely hidden inside the notch cutout.
             (rect, ear, corner) = (geometry.notchRect, 0, 12)
         case .compact:
-            (rect, ear, corner) = (geometry.compactRect, 6, 12)
+            let wing = (geometry.compactRect.width - geometry.notchRect.width) / 2
+            (rect, ear, corner) = (geometry.compactRect, min(6, wing), 12)
         case .open:
             (rect, ear, corner) = (geometry.openRect, 10, 24)
         }

@@ -17,10 +17,11 @@ struct MusicCompactView: View {
             switch side {
             case .leading:
                 MusicArtwork(image: source.artwork, cornerRadius: 5)
-                    .frame(width: 22, height: 22)
+                    .frame(maxWidth: 22, maxHeight: 22)
+                    .aspectRatio(1, contentMode: .fit)  // shrinks in narrow wings
             case .trailing:
                 AudioBars(isPlaying: source.snapshot?.isPlaying == true, color: source.player.accentColor)
-                    .frame(width: 22, height: 14)
+                    .frame(maxWidth: 22, maxHeight: 14)
             }
         }
     }

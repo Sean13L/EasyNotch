@@ -277,6 +277,8 @@ folder.
   follows its own pattern and speed. They're decorative; real audio levels would need the Screen
   Recording permission, which isn't worth it. A running Pomodoro takes priority over music for
   the wings.
+- **Paused music lingers.** After a track that was playing is paused, its wings stay up
+  (bars at rest) for a duration you choose (`PausedTrackLinger`, tested), then hide.
 - **Layout.** Shuffle · previous · play · next · repeat sit centered under the progress bar.
   Volume sits in the header row.
 - **Expanded view.** Artwork, title, artist, album, scrubber, previous/play/next, volume,
@@ -344,7 +346,7 @@ the moment it changes, and the notch updates live as you adjust it.
 | Group | Options |
 |---|---|
 | Behavior | Open on hover or click; hover delay; close delay; hot-zone size; open on file drag; haptics; hide in full-screen apps |
-| Size & shape | Expanded width and height (minimum 560×190 pt, so every tab fits); corner radius; compact wing width (minimum 48 pt) |
+| Size & shape | Expanded width and height (minimum 560×190 pt, so every tab fits); corner radius; compact wing width (0 = exactly the notch's size); live preview of either shape in the Size pane |
 | Animation | A preset (Smooth, Snappy, Bouncy) or a custom spring |
 | Modules | Turn Music, Shelf, and Pomodoro on or off; drag to reorder tabs; default tab; which live activities appear in compact mode |
 | Appearance | Accent color; background (pure black to match the hardware, or blur); tab labels on or off |

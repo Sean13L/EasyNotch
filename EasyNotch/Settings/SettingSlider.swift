@@ -15,6 +15,8 @@ struct SettingSlider: View {
     let setting: NumericSetting
     let step: Double
     let unit: Unit
+    /// Called with true when the user starts dragging, and false when they let go.
+    var onEditingChanged: (Bool) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -23,7 +25,7 @@ struct SettingSlider: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
-            Slider(value: $value, in: setting.range, step: step)
+            Slider(value: $value, in: setting.range, step: step, onEditingChanged: onEditingChanged)
                 .labelsHidden()
         }
     }
