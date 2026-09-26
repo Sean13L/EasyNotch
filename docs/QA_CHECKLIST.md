@@ -254,3 +254,15 @@ every rebuild.
 - [ ] **Restore Defaults…** puts every option back, including tab order, displays, and the
       shortcut.
 - [ ] CPU stays about 0% while idle.
+
+---
+
+## Phase 6: Release build (the copy in /Applications)
+- [ ] EasyNotch runs from /Applications, and the new icon shows in Finder and Launchpad.
+- [ ] Music: allow "EasyNotch wants to control Spotify/Music" once more; the release is signed
+      differently from the development builds. The controls work.
+- [ ] Shelf: files from Downloads and other protected folders open (allow access once if
+      asked).
+- [ ] Settings → General → "Open EasyNotch when you log in": turn it off and on again, then
+      restart. The /Applications copy starts by itself.
+- [ ] Walk through the earlier phases' checks you haven't confirmed yet.

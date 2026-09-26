@@ -60,7 +60,7 @@ on any notched MacBook. We use your numbers to test that the measurement is righ
 | D11 | Testing | **Swift Testing** (`@Test`) for logic, plus a manual QA checklist for the UI | Bugs hide in logic; UI is best checked by looking at it | XCUITest (slow and flaky for overlay windows) |
 | D13 | Full-screen detection | **Undocumented `CGSManagedDisplayGetCurrentSpace` / `CGSSpaceGetType`**, looked up while the app runs | macOS has no public API for this, and window-size guesses can't tell a maximized window from a full-screen one. They're long-stable (yabai and Hammerspoon use them). If they vanish, the option simply does nothing | Window-size heuristics; dropping the option |
 | D14 | Global shortcut | **Carbon `RegisterEventHotKey`** with our own recorder | Works system-wide without the Accessibility permission, and keeps zero dependencies (D10) | The `KeyboardShortcuts` package |
-| D12 | Distribution | **GitHub Releases**: a zipped `.app`, not notarized, with install steps for getting past the "could not verify" warning. Releases are signed with **one stable certificate** | Free. The stable signature matters because macOS ties the Automation permission to it; with ad-hoc signing, every update would make users grant it again | Notarized Developer ID ($99/year; can be added later with no code changes); Mac App Store (needs the sandbox, see D5) |
+| D12 | Distribution | **GitHub Releases**: a zipped `.app`, not notarized, with install steps for getting past the "could not verify" warning. Releases are signed with **one stable, self-signed certificate ("EasyNotch Developer")**, so the signature carries no personal details | Free. The stable signature matters because macOS ties the Automation permission to it; with ad-hoc signing, every update would make users grant it again | Notarized Developer ID ($99/year; can be added later with no code changes); Mac App Store (needs the sandbox, see D5) |
 
 ---
 
@@ -512,7 +512,7 @@ Every phase ends the same way:
 | **3. Music** ✅ | Spotify and Apple Music | The right track and artwork appear within 1 s of a change; every control works in both players; a denied permission is explained; a player is never launched by accident; compact live activity; settings pane | L |
 | **4. Shelf + AirDrop** ✅ | Quick file access | Dragging in opens the shelf; dragging out works into Finder, browser upload fields, Slack, and Mail; AirDrop tile plus per-item AirDrop, Share, and Quick Look; items survive a relaunch; missing files are handled | M |
 | **5. Customization** ✅ | Everything is adjustable | Every option in §6.4 works live; module toggles and reordering; animation presets; display options; launch at login; global shortcut; reset, export, and import | M |
-| **6. Polish & ship** | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |
+| **6. Polish & ship** ✅ | Good enough for daily use | App icon; a performance pass with Instruments; the full QA checklist; a Release build installed in /Applications; a signed `.zip` on GitHub Releases with install instructions (D12); a license and a public repo | S–M |
 
 **Phase 1 is done when:**
 - the closed notch is invisible on your screen (pixel-matched to 185 × 32)

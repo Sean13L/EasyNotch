@@ -11,3 +11,6 @@ xcuserdata/
 
 # macOS
 .DS_Store
+
+# Release zips (built by the release steps, attached to GitHub Releases)
+dist/

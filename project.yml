@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     # Code runs on the main actor unless marked otherwise (BLUEPRINT D8).
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
@@ -49,6 +49,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.seanl.easynotch
         ENABLE_HARDENED_RUNTIME: "YES"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Release:
+          # Xcode adds "get-task-allow" (lets debuggers attach) when signing for development.
+          # Shipped builds must not have it.
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: "NO"
 
   EasyNotchTests:
     type: bundle.unit-test
