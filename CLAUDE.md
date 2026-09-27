@@ -20,9 +20,11 @@ sentence or two, and prefer simple, readable code over clever code.
   The script builds unsigned first; re-signing left the old certificate's bytes in the binary.
   The v1.0.0 zip was rebuilt cleanly and replaced on GitHub. Commits use the owner's GitHub
   noreply email.
-- **v1.1.1 (built, not published):** the sound bars take the album cover's color
-  (`ArtworkColor`), shuffle and repeat show in the player's color, and the cover no longer
-  flashes between tracks. Publish only when the owner says "publish".
+- **v1.2.0 (built 2026-09-27, not published):** includes the unpublished 1.1.1 work (sound
+  bars in the cover's color via `ArtworkColor`, player-colored shuffle/repeat, no cover flash
+  between tracks), plus clicking the cover opens the player, a multi-day Calendar agenda
+  (`calendarDaysAhead`), and an Internet Accounts hint for Google/Outlook calendars. 147 tests
+  pass. Publish only when the owner says "publish".
 - **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
   Releasing.
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).

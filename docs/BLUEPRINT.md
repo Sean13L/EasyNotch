@@ -395,7 +395,8 @@ window is in front, the notch stays open as a live preview.
 
 ### 6.5 Next Meeting (v1.1)
 
-- **`CalendarService` (EventKit)** reads today's events and publishes `meetings` and `liveMeeting`.
+- **`CalendarService` (EventKit)** reads events from today through the next 1–14 days (default
+  7) and publishes `meetings` and `liveMeeting`.
   - It reloads on `EKEventStoreChanged`, at midnight, and on wake.
   - It sleeps until the next moment anything changes, rather than polling.
   - It skips events you declined and, if you choose, all-day events and calendars you've hidden.
@@ -405,11 +406,14 @@ window is in front, the notch stays open as a live preview.
     - whether one is in the live-activity window (the lead time before the meeting until
       5 minutes after it starts)
     - when to wake next
-    - short texts like "in 4m" and "ends in 20m"
+    - short texts like "in 4m" and "ends in 20m", or "Tomorrow" for a later day
+    - the agenda: the coming days' events grouped by day ("Today", "Tomorrow", "Monday,
+      May 11"), with all-day events first
   - `MeetingLinkFinder` finds Zoom, Google Meet, Teams, Webex, and FaceTime links in the
     event's URL, location, or notes, in that order.
 - **Views:**
-  - **Tab:** the next meeting with a big **Join** button, then the rest of today.
+  - **Tab:** "Next up" (the next timed event, with a big **Join** button when it has a call
+    link), and a scrolling "Coming up" agenda of the next few days.
   - **Wings:** a calendar-colored dot and "4m", then "now".
 - **Permission:** Calendars (full access), requested only when you press the button in the tab.
 - **Privacy:** events never leave the Mac, and titles are never logged.

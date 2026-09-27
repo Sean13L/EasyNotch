@@ -5,7 +5,7 @@ import Testing
 /// Proves the test setup works: tests run inside the app, so `Bundle.main` is EasyNotch.
 struct SmokeTests {
     @Test func appVersionComesFromProjectSettings() {
-        #expect(Bundle.main.appVersion == "1.1.1")
+        #expect(Bundle.main.appVersion == "1.2.0")
     }
 
     @Test func bundleIdentifierMatchesBlueprint() {

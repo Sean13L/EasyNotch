@@ -24,7 +24,8 @@ final class CalendarService {
     }
 
     private(set) var access = Access.notDetermined
-    /// Today's events from the included calendars (declined and cancelled ones left out).
+    /// Events from today through `calendarDaysAhead` days, from the included calendars
+    /// (declined and cancelled ones left out).
     private(set) var meetings: [Meeting] = []
     /// Every event calendar, for Settings → Calendar.
     private(set) var calendars: [CalendarInfo] = []
@@ -37,6 +38,10 @@ final class CalendarService {
     @ObservationIgnored private var wakeTask: Task<Void, Never>?
 
     static let privacySettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")!
+    /// System Settings → Internet Accounts, where Google, Outlook/Exchange, and other calendar
+    /// accounts are added. EasyNotch sees their calendars once they're there, with no sign-in of
+    /// its own.
+    static let internetAccountsURL = URL(string: "x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension")!
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -77,12 +82,9 @@ final class CalendarService {
         MeetingSchedule.next(meetings, now: now)
     }
 
-    func upcomingMeetings(now: Date) -> [Meeting] {
-        MeetingSchedule.upcoming(meetings, now: now)
-    }
-
-    var allDayMeetings: [Meeting] {
-        meetings.filter(\.isAllDay)
+    /// The coming days for the tab, leaving out `excluding` (the highlighted event).
+    func agenda(now: Date, excluding excludedID: String?) -> [MeetingSchedule.Day] {
+        MeetingSchedule.agenda(meetings, now: now, excluding: excludedID)
     }
 
     func reload() {
@@ -105,14 +107,15 @@ final class CalendarService {
             meetings = []
         } else {
             let dayStart = Calendar.current.startOfDay(for: .now)
-            let dayEnd = Calendar.current.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+            let days = Int(settings.calendarDaysAhead)
+            let dayEnd = Calendar.current.date(byAdding: .day, value: days, to: dayStart) ?? dayStart
             let predicate = store.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: included)
             meetings = store.events(matching: predicate)
                 .filter { $0.status != .canceled && !Self.isDeclined($0) }
                 .filter { settings.calendarShowAllDay || !$0.isAllDay }
                 .map(Self.meeting)
         }
-        Log.calendar.notice("Loaded \(self.meetings.count) events for today")
+        Log.calendar.notice("Loaded \(self.meetings.count) events for the next \(Int(self.settings.calendarDaysAhead)) day(s)")
         updateLiveMeeting()
     }
 
@@ -160,6 +163,7 @@ final class CalendarService {
             _ = settings.calendarShowAllDay
             _ = settings.calendarInNotch
             _ = settings.calendarLeadMinutes
+            _ = settings.calendarDaysAhead
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 self?.reload()

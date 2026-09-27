@@ -24,8 +24,13 @@ private struct NowPlayingPanel: View {
 
     var body: some View {
         HStack(spacing: 20) {
-            MusicArtwork(image: source.artwork)
-                .frame(width: 118, height: 118)
+            // Clicking the cover opens the player, like the app icon at the top right.
+            Button { source.openApp() } label: {
+                MusicArtwork(image: source.artwork)
+                    .frame(width: 118, height: 118)
+            }
+            .buttonStyle(.plain)
+            .help("Open \(source.player.displayName)")
 
             VStack(spacing: 8) {
                 header

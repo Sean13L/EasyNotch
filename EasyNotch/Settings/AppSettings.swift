@@ -48,6 +48,8 @@ extension NumericSetting {
     // Calendar
     /// Minutes before a meeting that it appears beside the notch.
     static let calendarLeadMinutes = NumericSetting(key: "calendar.leadMinutes", defaultValue: 5, range: 1...15)
+    /// How many days the Calendar tab lists, counting today.
+    static let calendarDaysAhead = NumericSetting(key: "calendar.daysAhead", defaultValue: 7, range: 1...14)
 
     // Battery
     /// Percentage at or below which a low-battery warning shows beside the notch.
@@ -62,7 +64,7 @@ extension NumericSetting {
         hoverDelay, closeDelay, hotZoneMargin, expandedWidth, expandedHeight, compactWingWidth,
         virtualNotchWidth, shortcutKeyCode, shortcutModifiers, focusMinutes, shortBreakMinutes,
         longBreakMinutes, sessionsBeforeLongBreak, musicPausedLinger, shelfMaxItems, shelfAutoRemoveDays,
-        calendarLeadMinutes, batteryLowThreshold, systemTransferThreshold,
+        calendarLeadMinutes, calendarDaysAhead, batteryLowThreshold, systemTransferThreshold,
     ]
 }
 
@@ -261,6 +263,7 @@ final class AppSettings {
     /// Show an upcoming meeting beside the closed notch.
     var calendarInNotch = BoolSetting.calendarInNotch.defaultValue { didSet { save(calendarInNotch, .calendarInNotch) } }
     var calendarLeadMinutes = NumericSetting.calendarLeadMinutes.defaultValue { didSet { save(calendarLeadMinutes, .calendarLeadMinutes) } }
+    var calendarDaysAhead = NumericSetting.calendarDaysAhead.defaultValue { didSet { save(calendarDaysAhead, .calendarDaysAhead) } }
     var calendarShowAllDay = BoolSetting.calendarShowAllDay.defaultValue { didSet { save(calendarShowAllDay, .calendarShowAllDay) } }
     var calendarHiddenIDs = StringListSetting.calendarHiddenIDs.defaultValue { didSet { save(calendarHiddenIDs, .calendarHiddenIDs) } }
 
@@ -390,6 +393,7 @@ final class AppSettings {
         shelfRemoveAfterDragOut = Self.load(.shelfRemoveAfterDragOut, from: defaults)
         calendarInNotch = Self.load(.calendarInNotch, from: defaults)
         calendarLeadMinutes = Self.load(.calendarLeadMinutes, from: defaults)
+        calendarDaysAhead = Self.load(.calendarDaysAhead, from: defaults)
         calendarShowAllDay = Self.load(.calendarShowAllDay, from: defaults)
         calendarHiddenIDs = Self.load(.calendarHiddenIDs, from: defaults)
         batteryChargingFlash = Self.load(.batteryChargingFlash, from: defaults)

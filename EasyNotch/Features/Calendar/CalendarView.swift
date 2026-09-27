@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Calendar tab: the next meeting with a Join button, and the rest of today.
+/// The Calendar tab: the next event with a Join button, and the coming days.
 struct CalendarView: View {
     @Environment(CalendarService.self) private var calendar
 
@@ -19,8 +19,8 @@ struct CalendarView: View {
         case .notDetermined:
             AccessMessage(
                 symbol: "calendar",
-                title: "See your next meeting here",
-                detail: "EasyNotch reads today's events on this Mac only; nothing is sent anywhere.",
+                title: "See what's coming up here",
+                detail: "EasyNotch reads your upcoming events on this Mac only; nothing is sent anywhere. Google and Outlook calendars work too, once they're added in System Settings → Internet Accounts.",
                 buttonTitle: "Allow Calendar Access"
             ) {
                 Task { await calendar.requestAccess() }
@@ -50,28 +50,45 @@ private struct MeetingsOverview: View {
 
     var body: some View {
         let next = calendar.nextMeeting(now: now)
-        let later = calendar.upcomingMeetings(now: now).filter { $0.id != next?.id }
+        let days = calendar.agenda(now: now, excluding: next?.id)
 
         HStack(alignment: .top, spacing: 20) {
             NextMeetingCard(meeting: next, now: now)
                 .frame(width: 250, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Later today")
+                Text("Coming up")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(calendar.allDayMeetings) { meeting in
-                            MeetingRow(meeting: meeting, time: "All day")
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(days, id: \.date) { day in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(MeetingSchedule.dayTitle(day.date, now: now))
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                ForEach(day.events) { meeting in
+                                    MeetingRow(
+                                        meeting: meeting,
+                                        time: meeting.isAllDay
+                                            ? "All day"
+                                            : meeting.start.formatted(date: .omitted, time: .shortened)
+                                    )
+                                }
+                            }
                         }
-                        ForEach(later) { meeting in
-                            MeetingRow(meeting: meeting, time: meeting.start.formatted(date: .omitted, time: .shortened))
-                        }
-                        if later.isEmpty, calendar.allDayMeetings.isEmpty {
-                            Text("Nothing else today")
+                        if days.isEmpty {
+                            Text("Nothing else coming up")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                            // A quiet calendar is also when a missing Google or Outlook calendar
+                            // would go unnoticed.
+                            Button("Using Google or Outlook? Add the account…") {
+                                NSWorkspace.shared.open(CalendarService.internetAccountsURL)
+                            }
+                            .buttonStyle(.link)
+                            .font(.caption)
+                            .padding(.top, 4)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,7 +140,7 @@ private struct NextMeetingCard: View {
                 Image(systemName: "checkmark.circle")
                     .font(.title2)
                     .foregroundStyle(.green)
-                Text("No more meetings today")
+                Text("Nothing coming up")
                     .font(.headline)
             }
         }

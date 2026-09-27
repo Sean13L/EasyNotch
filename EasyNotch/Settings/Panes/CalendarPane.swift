@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Upcoming meetings: when they show beside the notch, and which calendars count.
+/// Upcoming events: how far ahead to list, when they show beside the notch, and which
+/// calendars count.
 struct CalendarPane: View {
     @Bindable var settings: AppSettings
     let calendar: CalendarService
@@ -15,6 +16,12 @@ struct CalendarPane: View {
                     }
                 }
                 .disabled(!settings.calendarInNotch)
+                Picker("List events for", selection: $settings.calendarDaysAhead) {
+                    Text("Today only").tag(1.0)
+                    Text("The next 3 days").tag(3.0)
+                    Text("The next week").tag(7.0)
+                    Text("The next 2 weeks").tag(14.0)
+                }
                 Toggle("List all-day events", isOn: $settings.calendarShowAllDay)
             } footer: {
                 Text("A meeting stays beside the notch until 5 minutes after it starts. Meetings you've declined are never shown.")
@@ -48,10 +55,14 @@ struct CalendarPane: View {
                         Button("Open System Settings") { NSWorkspace.shared.open(CalendarService.privacySettingsURL) }
                     }
                 }
+
+                LabeledContent("Using Google, Outlook, or another calendar? Add the account to your Mac and its calendars appear here.") {
+                    Button("Internet Accounts…") { NSWorkspace.shared.open(CalendarService.internetAccountsURL) }
+                }
             } header: {
                 Text("Calendars")
             } footer: {
-                Text("Events are read on this Mac only and never sent anywhere.")
+                Text("Events are read on this Mac only and never sent anywhere. EasyNotch never signs in to your accounts itself.")
             }
         }
         .formStyle(.grouped)

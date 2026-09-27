@@ -136,6 +136,7 @@ every rebuild.
 - [ ] The bars beside the notch take the main color of the cover, and change when the track
       does. A dark cover still gives bright bars, and a black-and-white one gives light grey.
 - [ ] The app icon (top right) opens the player.
+- [ ] Clicking the cover art opens the player too.
 
 - [ ] Pause the music. The wings stay up with the cover art and resting bars for the time set
       in Settings → Music → "After pausing, keep showing it for", then disappear. Resuming
@@ -284,12 +285,21 @@ every rebuild.
 ### Next Meeting (Calendar tab)
 - [ ] Before allowing access, the tab shows **Allow Calendar Access**. No prompt appears until
       you press it.
-- [ ] Press it and choose Allow: today's meetings appear.
+- [ ] Press it and choose Allow: your next event and the coming days appear.
+- [ ] The "Coming up" list is grouped under Today, Tomorrow, then weekday and date, with all-day
+      events first in each day. It scrolls when long.
+- [ ] Settings → Calendar → "List events for": today only / 3 days / a week / 2 weeks changes
+      how far the list reaches. With today only, tomorrow's events disappear.
+- [ ] An event on a later day says "Tomorrow" or its weekday on the Next up card, not "in 26h".
 - [ ] Declining instead shows "Calendar access is turned off". **Open System Settings** opens
       Privacy & Security → Calendars.
 - [ ] A meeting with a Zoom, Meet, Teams, Webex, or FaceTime link has a **Join** button, and
       it opens the call.
 - [ ] Meetings you've declined don't appear.
+- [ ] Settings → Calendar → **Internet Accounts…** opens System Settings → Internet Accounts.
+      After a Google account is added there with Calendars on, its calendars appear in the list
+      and its meetings in the tab. On a day with nothing else on, the tab also shows the
+      "Using Google or Outlook?" link.
 - [ ] Settings → Calendar:
   - [ ] "List all-day events" hides or shows them.
   - [ ] Unticking a calendar removes its events.

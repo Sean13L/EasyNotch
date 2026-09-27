@@ -31,6 +31,7 @@ struct AppSettingsTests {
             #expect(!settings.shelfRemoveAfterDragOut)
             #expect(settings.calendarInNotch)
             #expect(settings.calendarLeadMinutes == 5)
+            #expect(settings.calendarDaysAhead == 7)
             #expect(settings.calendarShowAllDay)
             #expect(settings.calendarHiddenIDs.isEmpty)
             #expect(settings.batteryChargingFlash)

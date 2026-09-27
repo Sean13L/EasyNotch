@@ -30,8 +30,10 @@ there. Hover over it, or click if you prefer, and it opens into a panel.
     and a sound you choose.
   - Keeps accurate time through sleep and restarts.
 - **📅 Next meeting**
-  - Today's meetings from the Calendar app, with a **Join** button for Zoom, Google Meet,
-    Teams, Webex, and FaceTime links.
+  - Your next event and an agenda of the coming days (you choose how far ahead), with a
+    **Join** button for Zoom, Google Meet, Teams, Webex, and FaceTime links.
+  - Works with iCloud, Google, Outlook/Exchange, and any other calendar account added in
+    System Settings → Internet Accounts. EasyNotch never signs in to them itself.
   - A countdown beside the notch a few minutes before each one starts.
 - **🔋 Battery & charging**
   - Charge, time left, charger wattage, battery health, and cycle count.
@@ -65,7 +67,7 @@ there. Hover over it, or click if you prefer, and it opens into a panel.
 
 ## Install
 
-1. Download **EasyNotch-1.1.1.zip** from the
+1. Download **EasyNotch-1.2.0.zip** from the
    [latest release](https://github.com/Sean13L/EasyNotch/releases/latest).
 2. Unzip it and drag **EasyNotch** into your **Applications** folder.
 3. Open it. macOS will say *"Apple could not verify 'EasyNotch' is free of malware…"*. Click

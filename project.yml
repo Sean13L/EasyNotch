@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.1.1"
+    MARKETING_VERSION: "1.2.0"
     CURRENT_PROJECT_VERSION: "1"
     # Code runs on the main actor unless marked otherwise (BLUEPRINT D8).
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
