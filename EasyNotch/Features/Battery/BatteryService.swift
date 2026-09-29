@@ -12,6 +12,8 @@ final class BatteryService {
     private(set) var isFlashing = false
     /// True while the battery is at or below the warning threshold (if that option is on).
     private(set) var isLow = false
+    /// The low-battery warning beside the notch; hidden once the user has opened the notch.
+    private(set) var showsLowWarning = false
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private var alerts = BatteryAlerts()
@@ -64,10 +66,17 @@ final class BatteryService {
         let now = Date.now
         alerts.update(fresh, now: now, lowThreshold: Int(settings.batteryLowThreshold))
         isLow = settings.batteryLowWarning && alerts.isLow
+        showsLowWarning = settings.batteryLowWarning && alerts.showsLowWarning
         updateFlash(now: now)
     }
 
     // MARK: - Private
+
+    /// The user opened the notch and has seen the low-battery warning.
+    func acknowledgeAlerts() {
+        alerts.acknowledgeLow()
+        showsLowWarning = settings.batteryLowWarning && alerts.showsLowWarning
+    }
 
     /// Applies the warning and flash settings right away, not at the next battery change.
     private func watchSettings() {

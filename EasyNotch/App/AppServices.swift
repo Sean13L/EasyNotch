@@ -42,9 +42,14 @@ final class AppServices {
             self?.screenManager.setPreview(preview)
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
+        // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
+        screenManager.onNotchOpened = { [calendar, battery] in
+            calendar.acknowledgeAlerts()
+            battery.acknowledgeAlerts()
+        }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.
-        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system] in
+        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system] preferred in
             let visible = NotchModule.visible(order: settings.moduleOrder, hidden: settings.hiddenModules)
             let showTimer = settings.pomodoroInNotch && visible.contains(.pomodoro) && pomodoro.engine.isActive
             let showMusic = settings.musicInNotch && visible.contains(.music)
@@ -56,10 +61,10 @@ final class AppServices {
                 timerRunning: showTimer && pomodoro.engine.isRunning,
                 musicPlaying: showMusic && nowPlaying.isPlaying,
                 musicRecentlyPaused: showMusic && nowPlaying.showsPausedTrack,
-                lowBattery: showBattery && battery.isLow,
+                lowBattery: showBattery && battery.showsLowWarning,
                 bigTransfer: visible.contains(.system) && system.isTransferring,
                 timerPaused: showTimer && !pomodoro.engine.isRunning
-            ))
+            ), preferring: preferred)
         }
     }
 
@@ -86,7 +91,7 @@ final class AppServices {
     /// `/usr/bin/log stream --level debug --predicate 'subsystem == "com.seanl.easynotch"'`
     private func watchLiveActivity() {
         let activity = withObservationTracking {
-            screenManager.liveActivityProvider()
+            screenManager.liveActivityProvider(nil)  // by priority; each notch may prefer its last tab
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in self?.watchLiveActivity() }
         }

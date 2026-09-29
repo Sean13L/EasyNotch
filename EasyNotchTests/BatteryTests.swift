@@ -96,4 +96,19 @@ struct BatteryTests {
         alerts.update(snapshot(report(percent: 5, plugged: true, charging: true)), now: t0, lowThreshold: 10)
         #expect(!alerts.isLow)  // plugged in: no warning
     }
+
+    @Test func theLowWarningHidesOnceSeenAndReturnsNextTime() {
+        var alerts = BatteryAlerts()
+        alerts.update(snapshot(report(percent: 9, plugged: false)), now: t0, lowThreshold: 10)
+        #expect(alerts.showsLowWarning)
+
+        alerts.acknowledgeLow()  // the user opened the notch
+        alerts.update(snapshot(report(percent: 8, plugged: false)), now: t0, lowThreshold: 10)
+        #expect(alerts.isLow)
+        #expect(!alerts.showsLowWarning)
+
+        alerts.update(snapshot(report(percent: 8, plugged: true)), now: t0, lowThreshold: 10)  // charged up
+        alerts.update(snapshot(report(percent: 9, plugged: false)), now: t0, lowThreshold: 10)  // low again
+        #expect(alerts.showsLowWarning)
+    }
 }

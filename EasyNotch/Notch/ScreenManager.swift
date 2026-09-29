@@ -7,7 +7,9 @@ final class ScreenManager {
     /// Called when Settings should open (the gear button or the right-click menu).
     var onShowSettings: (() -> Void)?
     /// Decides what shows beside the closed notch; passed on to every screen's notch.
-    var liveActivityProvider: () -> LiveActivity? = { nil }
+    var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
+    /// Called when any notch opens.
+    var onNotchOpened: (() -> Void)?
 
     private let settings: AppSettings
     private let mouseTracker: MouseTracker
@@ -111,6 +113,7 @@ final class ScreenManager {
             ) {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
                 controller.viewModel.liveActivityProvider = liveActivityProvider
+                controller.viewModel.onOpen = { [weak self] in self?.onNotchOpened?() }
                 controller.viewModel.setPreview(preview)
                 controllers[id] = controller
             }

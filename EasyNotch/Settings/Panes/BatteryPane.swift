@@ -20,7 +20,7 @@ struct BatteryPane: View {
                 )
                 .disabled(!settings.batteryLowWarning)
             } footer: {
-                Text("A red battery shows beside the notch until you plug in.")
+                Text("A red battery shows beside the notch until you open the notch or plug in.")
             }
         }
         .formStyle(.grouped)

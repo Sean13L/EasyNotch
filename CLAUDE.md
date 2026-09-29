@@ -23,8 +23,10 @@ sentence or two, and prefer simple, readable code over clever code.
 - **v1.2.0 (built 2026-09-27, not published):** includes the unpublished 1.1.1 work (sound
   bars in the cover's color via `ArtworkColor`, player-colored shuffle/repeat, no cover flash
   between tracks), plus clicking the cover opens the player, a multi-day Calendar agenda
-  (`calendarDaysAhead`), and an Internet Accounts hint for Google/Outlook calendars. 147 tests
-  pass. Publish only when the owner says "publish".
+  (`calendarDaysAhead`), and an Internet Accounts hint for Google/Outlook calendars. Rebuilt
+  2026-09-29 to add: the wings prefer the last-viewed tab's activity, and meeting and
+  low-battery alerts stay until the notch is opened (`MeetingAlerts`). 155 tests pass. Publish
+  only when the owner says "publish".
 - **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
   Releasing.
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).

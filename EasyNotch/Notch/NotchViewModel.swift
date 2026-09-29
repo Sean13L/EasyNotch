@@ -28,11 +28,17 @@ final class NotchViewModel {
     /// is elsewhere, until the pointer visits it and leaves, or you click outside it.
     private(set) var isHeldOpen = false
 
-    /// Which live activity (if any) should show beside the closed notch. Set by `AppServices`,
-    /// so the notch never needs to know about individual features.
-    @ObservationIgnored var liveActivityProvider: () -> LiveActivity? = { nil }
+    /// The tab that was on screen when the notch last closed. Its live activity is preferred
+    /// beside the closed notch (see `LiveActivity.resolve`).
+    private(set) var lastViewedModule: NotchModule?
+
+    /// Which live activity (if any) should show beside the closed notch, given the tab to
+    /// prefer. Set by `AppServices`, so the notch never needs to know about individual features.
+    @ObservationIgnored var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
     /// Called after every state change; the window controller uses it to toggle click-through.
     @ObservationIgnored var onStateChange: ((NotchState) -> Void)?
+    /// Called whenever the notch opens (not for Settings previews), e.g. to mark alerts as seen.
+    @ObservationIgnored var onOpen: (() -> Void)?
     /// Called when the gear button is pressed.
     @ObservationIgnored var onShowSettings: (() -> Void)?
 
@@ -51,7 +57,7 @@ final class NotchViewModel {
 
     // MARK: - What's shown
 
-    var liveActivity: LiveActivity? { liveActivityProvider() }
+    var liveActivity: LiveActivity? { liveActivityProvider(lastViewedModule) }
 
     var presentation: NotchPresentation {
         if state == .open { return .open }
@@ -244,6 +250,10 @@ final class NotchViewModel {
 
     private func setState(_ newState: NotchState) {
         guard newState != state else { return }
+        if state == .open, preview == nil {
+            // Remember what the user was looking at, so its live activity shows once closed.
+            lastViewedModule = currentModule
+        }
         state = newState
         if newState == .closed { isHeldOpen = false }
         Log.notch.debug("Notch \(String(describing: newState), privacy: .public)")
@@ -251,5 +261,6 @@ final class NotchViewModel {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
         onStateChange?(newState)
+        if newState == .open, preview == nil { onOpen?() }
     }
 }

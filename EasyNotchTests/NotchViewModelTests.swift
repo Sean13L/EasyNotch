@@ -106,7 +106,7 @@ struct NotchViewModelTests {
             vm.setPreview(.compact)
             #expect(vm.presentation == .compact(.placeholder))
 
-            vm.liveActivityProvider = { .music }
+            vm.liveActivityProvider = { _ in .music }
             #expect(vm.presentation == .compact(.music))  // a real activity is shown if there is one
 
             vm.pointerMoved(to: notchCenter)
@@ -138,7 +138,7 @@ struct NotchViewModelTests {
             let vm = makeViewModel(defaults)
             #expect(vm.presentation == .closed)
 
-            vm.liveActivityProvider = { .pomodoro }
+            vm.liveActivityProvider = { _ in .pomodoro }
             #expect(vm.presentation == .compact(.pomodoro))
 
             vm.pointerMoved(to: notchCenter)
@@ -152,7 +152,7 @@ struct NotchViewModelTests {
             vm.pointerMoved(to: leftWing)
             #expect(vm.state == .closed)
 
-            vm.liveActivityProvider = { .pomodoro }
+            vm.liveActivityProvider = { _ in .pomodoro }
             vm.pointerMoved(to: leftWing)
             #expect(vm.state == .open)
         }
@@ -162,9 +162,41 @@ struct NotchViewModelTests {
         withIsolatedDefaults { defaults in
             let vm = makeViewModel(defaults)
             vm.selectedModule = .music
-            vm.liveActivityProvider = { .pomodoro }
+            vm.liveActivityProvider = { _ in .pomodoro }
             vm.pointerMoved(to: notchCenter)
             #expect(vm.selectedModule == .pomodoro)
+        }
+    }
+
+    @Test func closingRemembersTheTabForTheLiveActivity() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            var askedFor: NotchModule?
+            vm.liveActivityProvider = { preferred in
+                askedFor = preferred
+                return preferred == .pomodoro ? .pomodoro : .music
+            }
+            #expect(vm.presentation == .compact(.music))
+
+            vm.pointerMoved(to: notchCenter)  // opens on the music tab
+            vm.selectedModule = .pomodoro  // the user switches tabs
+            vm.pointerMoved(to: desktop)  // and leaves
+            #expect(vm.state == .closed)
+            #expect(vm.lastViewedModule == .pomodoro)
+            #expect(vm.presentation == .compact(.pomodoro))
+            #expect(askedFor == .pomodoro)
+        }
+    }
+
+    @Test func openingTellsTheAppSoAlertsCountAsSeen() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            var opens = 0
+            vm.onOpen = { opens += 1 }
+            vm.pointerMoved(to: notchCenter)
+            #expect(opens == 1)
+            vm.pointerMoved(to: desktop)
+            #expect(opens == 1)  // closing doesn't count
         }
     }
 
@@ -224,7 +256,7 @@ struct NotchViewModelTests {
             #expect(vm.currentModule == .pomodoro)  // the "opens first" setting
 
             vm.close()
-            vm.liveActivityProvider = { .music }
+            vm.liveActivityProvider = { _ in .music }
             vm.pointerMoved(to: notchCenter)
             #expect(vm.currentModule == .music)  // a live activity beats the setting
 

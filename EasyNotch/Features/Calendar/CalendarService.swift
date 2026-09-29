@@ -29,13 +29,14 @@ final class CalendarService {
     private(set) var meetings: [Meeting] = []
     /// Every event calendar, for Settings → Calendar.
     private(set) var calendars: [CalendarInfo] = []
-    /// The meeting to show beside the closed notch right now (see `MeetingSchedule`).
+    /// The meeting to alert about beside the closed notch right now (see `MeetingAlerts`).
     private(set) var liveMeeting: Meeting?
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private var store: EKEventStore?
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var wakeTask: Task<Void, Never>?
+    @ObservationIgnored private var alerts = MeetingAlerts()
 
     static let privacySettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")!
     /// System Settings → Internet Accounts, where Google, Outlook/Exchange, and other calendar
@@ -144,7 +145,8 @@ final class CalendarService {
     private func updateLiveMeeting() {
         let lead = settings.calendarLeadMinutes * 60
         let now = Date.now
-        let live = settings.calendarInNotch ? MeetingSchedule.liveMeeting(meetings, now: now, lead: lead) : nil
+        let alert = alerts.update(meetings, now: now, lead: lead)
+        let live = settings.calendarInNotch ? alert : nil
         if live != liveMeeting { liveMeeting = live }
 
         wakeTask?.cancel()
@@ -154,6 +156,12 @@ final class CalendarService {
             guard !Task.isCancelled else { return }
             self?.updateLiveMeeting()
         }
+    }
+
+    /// The user opened the notch and has seen the meeting alert.
+    func acknowledgeAlerts() {
+        alerts.acknowledge()
+        updateLiveMeeting()
     }
 
     /// Reloads when calendar settings change.

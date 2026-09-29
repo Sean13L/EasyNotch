@@ -70,9 +70,25 @@ struct ActivePlayerPickerTests {
         #expect(LiveActivity.resolve(Candidates(chargingFlash: true, meetingSoon: true, timerRunning: true)) == .battery)
         #expect(LiveActivity.resolve(Candidates(meetingSoon: true, timerRunning: true, musicPlaying: true)) == .meeting)
         #expect(LiveActivity.resolve(Candidates(timerRunning: true, musicPlaying: true)) == .pomodoro)
-        #expect(LiveActivity.resolve(Candidates(musicRecentlyPaused: true, lowBattery: true)) == .music)
+        #expect(LiveActivity.resolve(Candidates(musicRecentlyPaused: true, lowBattery: true)) == .battery)  // an alert
         #expect(LiveActivity.resolve(Candidates(lowBattery: true, bigTransfer: true)) == .battery)
         #expect(LiveActivity.resolve(Candidates(bigTransfer: true, timerPaused: true)) == .network)
         #expect(LiveActivity.resolve(Candidates(timerPaused: true)) == .pomodoro)
+    }
+
+    @Test func theLastViewedTabWins() {
+        typealias Candidates = LiveActivity.Candidates
+        let timerAndMusic = Candidates(timerRunning: true, musicPlaying: true)
+        #expect(LiveActivity.resolve(timerAndMusic) == .pomodoro)  // by priority
+        #expect(LiveActivity.resolve(timerAndMusic, preferring: .music) == .music)
+        // A paused timer counts too.
+        #expect(LiveActivity.resolve(Candidates(musicPlaying: true, timerPaused: true), preferring: .pomodoro) == .pomodoro)
+        // The last tab has nothing to show: fall back to the priority order.
+        #expect(LiveActivity.resolve(timerAndMusic, preferring: .shelf) == .pomodoro)
+        #expect(LiveActivity.resolve(timerAndMusic, preferring: .calendar) == .pomodoro)
+        // Alerts still come first: the charging flash, a meeting, then low battery.
+        #expect(LiveActivity.resolve(Candidates(chargingFlash: true, musicPlaying: true), preferring: .music) == .battery)
+        #expect(LiveActivity.resolve(Candidates(meetingSoon: true, timerRunning: true), preferring: .pomodoro) == .meeting)
+        #expect(LiveActivity.resolve(Candidates(musicPlaying: true, lowBattery: true), preferring: .music) == .battery)
     }
 }

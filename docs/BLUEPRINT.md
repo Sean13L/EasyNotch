@@ -403,8 +403,11 @@ window is in front, the notch stays open as a live preview.
 - **Pure logic, unit-tested:**
   - `MeetingSchedule` works out:
     - the next meeting
-    - whether one is in the live-activity window (the lead time before the meeting until
-      5 minutes after it starts)
+    - the next moment anything changes, so it can wake exactly then
+  - `MeetingAlerts` decides which meeting to alert about beside the notch:
+    - an alert starts at the lead time before a meeting, or up to 5 minutes after it starts
+    - it then stays until the user opens the notch (any open counts as seen) or the
+      meeting ends
     - when to wake next
     - short texts like "in 4m" and "ends in 20m", or "Tomorrow" for a later day
     - the agenda: the coming days' events grouped by day ("Today", "Tomorrow", "Monday,
@@ -462,7 +465,15 @@ window is in front, the notch stays open as a live preview.
 
 ### 6.8 Live activities when several things happen at once
 
-`LiveActivity.resolve` takes one `Candidates` struct and picks the most important:
+`LiveActivity.resolve` takes one `Candidates` struct and the tab that was on screen when the
+notch last closed (`NotchViewModel.lastViewedModule`).
+- **That tab's activity wins if it has one.** Switch to Pomodoro and close the notch, and the
+  timer shows even while music plays.
+- **The 4-second charging flash still comes first.**
+- **Alerts stay until the notch is opened, and win over the last tab.** A meeting about to
+  start (`MeetingAlerts`) and low battery (`BatteryAlerts.showsLowWarning`) count as alerts.
+  Opening any notch marks them as seen (`ScreenManager.onNotchOpened`).
+- **Otherwise it picks the most important:**
 
 1. charging flash
 2. meeting soon

@@ -24,7 +24,7 @@ struct CalendarPane: View {
                 }
                 Toggle("List all-day events", isOn: $settings.calendarShowAllDay)
             } footer: {
-                Text("A meeting stays beside the notch until 5 minutes after it starts. Meetings you've declined are never shown.")
+                Text("A meeting stays beside the notch until you open the notch or it ends, even over other tabs. Meetings you've declined are never shown.")
             }
 
             Section {

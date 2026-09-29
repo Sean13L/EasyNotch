@@ -35,15 +35,24 @@ enum LiveActivity: Equatable {
         var timerPaused = false
     }
 
-    /// Picks what to show when several things are going on, most important first:
-    /// 1. the charging flash (it only lasts a few seconds)
+    /// Picks what to show when several things are going on.
+    ///
+    /// Alerts come first: the brief charging flash, then a meeting about to start, then low
+    /// battery. The meeting and battery alerts stay until the user opens the notch.
+    ///
+    /// Next, the tab the user last had open (`preferring`) wins if it has something to show, so
+    /// switching to the Pomodoro tab and closing the notch puts the timer beside it, even while
+    /// music plays.
+    ///
+    /// Otherwise, most important first:
+    /// 1. the charging flash
     /// 2. a meeting about to start
     /// 3. a running timer
     /// 4. playing music, then music that was just paused
     /// 5. low battery
     /// 6. a big transfer
     /// 7. a paused timer
-    static func resolve(_ candidates: Candidates) -> LiveActivity? {
+    static func resolve(_ candidates: Candidates, preferring preferred: NotchModule? = nil) -> LiveActivity? {
         let ranked: [(Bool, LiveActivity)] = [
             (candidates.chargingFlash, .battery),
             (candidates.meetingSoon, .meeting),
@@ -53,6 +62,12 @@ enum LiveActivity: Equatable {
             (candidates.bigTransfer, .network),
             (candidates.timerPaused, .pomodoro),
         ]
+        if candidates.chargingFlash { return .battery }
+        if candidates.meetingSoon { return .meeting }
+        if candidates.lowBattery { return .battery }
+        if let preferred, let match = ranked.first(where: { $0.0 && $0.1.module == preferred }) {
+            return match.1
+        }
         return ranked.first { $0.0 }?.1
     }
 }

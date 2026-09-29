@@ -39,13 +39,45 @@ struct CalendarTests {
         #expect(MeetingSchedule.next(meetings, now: t0)?.id == "ongoing")
     }
 
-    @Test func theNotchShowsAMeetingFromTheLeadTimeUntilFiveMinutesIn() {
+    @Test func aMeetingAlertStartsAtTheLeadTime() {
         let meetings = [meeting("standup", startsIn: 10 * minute)]
-        let lead = 5 * minute
-        #expect(MeetingSchedule.liveMeeting(meetings, now: t0, lead: lead) == nil)  // 10 min away
-        #expect(MeetingSchedule.liveMeeting(meetings, now: t0 + 5 * minute, lead: lead)?.id == "standup")
-        #expect(MeetingSchedule.liveMeeting(meetings, now: t0 + 14 * minute, lead: lead)?.id == "standup")  // 4 min in
-        #expect(MeetingSchedule.liveMeeting(meetings, now: t0 + 15 * minute, lead: lead) == nil)  // 5 min in
+        var alerts = MeetingAlerts()
+        #expect(alerts.update(meetings, now: t0, lead: 5 * minute) == nil)  // 10 min away
+        #expect(alerts.update(meetings, now: t0 + 5 * minute, lead: 5 * minute)?.id == "standup")
+    }
+
+    @Test func theAlertStaysUntilTheNotchIsOpened() {
+        let meetings = [meeting("standup", startsIn: 10 * minute, lasts: 30 * minute)]
+        var alerts = MeetingAlerts()
+        _ = alerts.update(meetings, now: t0 + 6 * minute, lead: 5 * minute)
+        // Well past the start, nobody has looked yet: still showing.
+        #expect(alerts.update(meetings, now: t0 + 25 * minute, lead: 5 * minute)?.id == "standup")
+
+        alerts.acknowledge()
+        #expect(alerts.update(meetings, now: t0 + 26 * minute, lead: 5 * minute) == nil)
+    }
+
+    @Test func anUnseenAlertEndsWithTheMeeting() {
+        let meetings = [meeting("standup", startsIn: 10 * minute, lasts: 30 * minute)]
+        var alerts = MeetingAlerts()
+        _ = alerts.update(meetings, now: t0 + 6 * minute, lead: 5 * minute)
+        #expect(alerts.update(meetings, now: t0 + 41 * minute, lead: 5 * minute) == nil)
+        #expect(alerts.started.isEmpty)  // and it's forgotten
+    }
+
+    @Test func seeingOneAlertDoesNotHideTheNext() {
+        let meetings = [meeting("first", startsIn: 5 * minute), meeting("second", startsIn: 60 * minute)]
+        var alerts = MeetingAlerts()
+        _ = alerts.update(meetings, now: t0 + 1 * minute, lead: 5 * minute)
+        alerts.acknowledge()
+        #expect(alerts.update(meetings, now: t0 + 56 * minute, lead: 5 * minute)?.id == "second")
+    }
+
+    @Test func openingTheAppMidMeetingDoesNotAlert() {
+        // Started 20 minutes ago: past the point where an alert would begin.
+        let meetings = [meeting("ongoing", startsIn: -20 * minute, lasts: 60 * minute)]
+        var alerts = MeetingAlerts()
+        #expect(alerts.update(meetings, now: t0, lead: 5 * minute) == nil)
     }
 
     @Test func itWakesAtTheNextMomentAnythingChanges() {

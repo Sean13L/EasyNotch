@@ -306,8 +306,11 @@ every rebuild.
 - [ ] Beside the notch (make a test event starting in a few minutes):
   - [ ] from your lead time (default 5 minutes), a colored dot and "4m" appear
   - [ ] "now" appears at the start time
-  - [ ] they disappear 5 minutes after the start
-  - [ ] hovering opens the Calendar tab
+  - [ ] if you don't open the notch, they stay up past the start, even with another tab's
+        activity preferred, until the meeting ends
+  - [ ] hovering opens the Calendar tab, and after that the meeting no longer shows beside the
+        notch
+  - [ ] a second meeting later still gets its own alert
 - [ ] Moving or deleting the test event in Calendar updates the notch within a few seconds.
 
 ### Battery & Charging
@@ -321,8 +324,8 @@ every rebuild.
 - [ ] Turning Low Power Mode on or off shows in the tab straight away.
 - [ ] Settings → Battery: turning off "Flash the charge when you plug in" stops the flash.
 - [ ] Low battery: when the battery is at or below the threshold and unplugged, a red battery
-      shows beside the notch. Plugging in removes it. You can only check this when the battery
-      is actually low.
+      shows beside the notch. Opening the notch or plugging in removes it. It returns the next
+      time the battery runs low. You can only check this when the battery is actually low.
 
 ### System Monitor
 - [ ] The System tab shows CPU and memory close to Activity Monitor's figures. The charts fill
@@ -337,6 +340,11 @@ every rebuild.
 ### Priorities and cost
 - [ ] With music playing, plugging in the charger shows the flash first, then music comes
       back.
+- [ ] With a timer running and music playing:
+  - [ ] open the notch, pick the Music tab, and leave: the music wings show
+  - [ ] pick the Pomodoro tab and leave: the timer shows
+  - [ ] after closing on a tab with nothing to show (e.g. Shelf), the usual order applies
+        (timer first)
 - [ ] A meeting about to start wins over a running timer or music.
 - [ ] Hidden tabs never show anything beside the notch.
 - [ ] CPU stays about 0% while idle with nothing playing and the System tab closed.

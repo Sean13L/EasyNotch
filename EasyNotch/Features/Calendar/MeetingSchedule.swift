@@ -10,8 +10,8 @@ nonisolated enum MeetingSchedule {
         let events: [Meeting]
     }
 
-    /// A meeting keeps showing beside the notch this long after it starts, so late joiners
-    /// can still reach the Join button in one hover.
+    /// A meeting's alert can start until this long after it starts (see `MeetingAlerts`), and
+    /// it reads "now" for this long.
     static let showsAfterStart: TimeInterval = 5 * 60
 
     /// Timed meetings that haven't ended yet, soonest first.
@@ -22,14 +22,6 @@ nonisolated enum MeetingSchedule {
     /// The meeting to highlight: one in progress, or else the next to start.
     static func next(_ meetings: [Meeting], now: Date) -> Meeting? {
         upcoming(meetings, now: now).first
-    }
-
-    /// The meeting to show beside the closed notch: starting within `lead`, or started less than
-    /// `showsAfterStart` ago.
-    static func liveMeeting(_ meetings: [Meeting], now: Date, lead: TimeInterval) -> Meeting? {
-        upcoming(meetings, now: now).first { meeting in
-            meeting.start - lead <= now && now < meeting.start + showsAfterStart
-        }
     }
 
     /// The next moment something could change (a meeting's window opening or closing, or a
