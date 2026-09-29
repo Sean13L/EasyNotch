@@ -12,21 +12,22 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.1.0: published** at github.com/Sean13L/EasyNotch (2026-09-26). It added three tabs:
-  Calendar, Battery, and System (BLUEPRINT §6.5–6.8). 135 tests pass; idle CPU is 0% and memory
-  is 40 MB. v1.0.0 (Phases 0–6) came before it.
+- **v1.2.0: published** at github.com/Sean13L/EasyNotch (2026-09-29), marked Latest.
+  - **Music:** cover-colored sound bars (`ArtworkColor`), player-colored shuffle/repeat, and
+    clicking the cover opens the player.
+  - **Calendar:** a multi-day agenda (`calendarDaysAhead`) and an Internet Accounts hint for
+    Google/Outlook.
+  - **Beside the notch:** the wings follow the last-viewed tab, and meeting and low-battery
+    alerts stay until the notch is opened (`MeetingAlerts`).
+  - 155 tests pass.
+- **Earlier releases:** v1.1.0 added the Calendar, Battery, and System tabs (BLUEPRINT
+  §6.5–6.8), and v1.0.0 covered Phases 0–6. v1.1.1 was built but never published; 1.2.0
+  includes it.
 - **Releases are signed** by the owner's self-signed "EasyNotch Developer" certificate via
   `scripts/release.sh`, never the Apple Development one (its name contains the owner's email).
   The script builds unsigned first; re-signing left the old certificate's bytes in the binary.
   The v1.0.0 zip was rebuilt cleanly and replaced on GitHub. Commits use the owner's GitHub
   noreply email.
-- **v1.2.0 (built 2026-09-27, not published):** includes the unpublished 1.1.1 work (sound
-  bars in the cover's color via `ArtworkColor`, player-colored shuffle/repeat, no cover flash
-  between tracks), plus clicking the cover opens the player, a multi-day Calendar agenda
-  (`calendarDaysAhead`), and an Internet Accounts hint for Google/Outlook calendars. Rebuilt
-  2026-09-29 to add: the wings prefer the last-viewed tab's activity, and meeting and
-  low-battery alerts stay until the notch is opened (`MeetingAlerts`). 155 tests pass. Publish
-  only when the owner says "publish".
 - **Next:** respond to feedback and issues. For updates, follow `docs/DEVELOPMENT.md` →
   Releasing.
 - **Signing:** Apple Development, Personal Team `Y4Q9CP9K8V`. Not notarized (BLUEPRINT D12).
