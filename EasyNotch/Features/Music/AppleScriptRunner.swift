@@ -1,5 +1,5 @@
+import AppKit
 import CoreServices
-import Foundation
 
 /// Runs AppleScript to talk to music apps, and checks whether macOS allows that.
 ///
@@ -35,7 +35,14 @@ actor AppleScriptRunner {
     /// Asks macOS whether EasyNotch may control the app. With `askIfNeeded`, macOS shows its
     /// permission prompt if the user hasn't decided yet, and this waits for the answer.
     func permission(for bundleID: String, askIfNeeded: Bool) -> AutomationPermission {
-        let target = NSAppleEventDescriptor(bundleIdentifier: bundleID)
+        // Ask about the running process by its ID, not by bundle ID. After a player restarts
+        // (an auto-update, for example), macOS can keep an entry for the old, dead process.
+        // A bundle-ID check gets sent to that entry and never returns, which blocks every
+        // script after it.
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first else {
+            return .playerNotRunning
+        }
+        let target = NSAppleEventDescriptor(processIdentifier: app.processIdentifier)
         let status = AEDeterminePermissionToAutomateTarget(
             target.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), askIfNeeded
         )

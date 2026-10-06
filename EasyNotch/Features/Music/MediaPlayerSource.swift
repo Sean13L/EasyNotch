@@ -28,6 +28,7 @@ final class MediaPlayerSource {
     var player: MediaPlayer { profile.player }
 
     @ObservationIgnored private let runner: AppleScriptRunner
+    @ObservationIgnored private let artworkDownloader = ArtworkDownloader()
     @ObservationIgnored private var notificationObserver: DistributedNotificationObserver?
     @ObservationIgnored private var workspaceObservers: [NSObjectProtocol] = []
     /// The track whose artwork is loaded (or known to be unavailable).
@@ -186,17 +187,34 @@ final class MediaPlayerSource {
         let trackID = snapshot.trackID
         guard trackID != artworkTrackID, trackID != artworkLoadingTrackID else { return }
         artworkLoadingTrackID = trackID
-        defer { artworkLoadingTrackID = nil }
+        defer {
+            // A newer track's cover may have started loading meanwhile; leave its mark alone.
+            if artworkLoadingTrackID == trackID { artworkLoadingTrackID = nil }
+        }
 
         var image: NSImage?
         // Whether "no image" is the final answer, or it might work once we know more.
-        let isFinal: Bool
+        var isFinal = false
+        // The download failed even after retrying, most likely because the Mac is offline.
+        var downloadFailed = false
         switch profile.artwork {
         case .url:
-            isFinal = snapshot.artworkURL != nil
-            if let url = snapshot.artworkURL,
-               let download = try? await URLSession.shared.data(from: url) {
-                image = NSImage(data: download.0)
+            guard let url = snapshot.artworkURL else { break }
+            let outcome = await artworkDownloader.image(from: url) { [weak self] in
+                // Stop if the track changed. Otherwise show the placeholder while retrying,
+                // rather than the previous track's cover.
+                guard let self, self.snapshot?.trackID == trackID else { return false }
+                self.artwork = nil
+                return true
+            }
+            switch outcome {
+            case let .image(downloaded):
+                image = downloaded
+                isFinal = true
+            case .notAnImage:
+                isFinal = true
+            case .failed:
+                downloadFailed = true
             }
         case let .script(source):
             isFinal = permission == .granted
@@ -212,6 +230,11 @@ final class MediaPlayerSource {
             artworkTrackID = trackID
             artwork = image
             Log.music.debug("\(self.player.displayName, privacy: .public) cover: \(image == nil ? "none" : "loaded", privacy: .public)")
+        } else if downloadFailed {
+            // Leave this track unmarked, so the next update (a broadcast, play/pause, or
+            // opening the notch) tries the download again.
+            artwork = nil
+            Log.music.notice("\(self.player.displayName, privacy: .public) cover: download failed; will try again on the next update")
         } else if permission == .granted {
             // A track change arrives first as a notification without the cover's link, and
             // the refresh that follows brings it a moment later. Keep the previous cover up

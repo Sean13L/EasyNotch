@@ -84,6 +84,17 @@ open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
   is nearly always.
 - Automation permission is tied to the code signature. Always keep the Apple Development
   signature, never ad-hoc. Reset with `tccutil reset AppleEvents com.seanl.easynotch`.
+- **Check permission by process ID, not bundle ID.** After Spotify restarted itself (seen with
+  1.3.3 on macOS 27), macOS kept an entry for the dead process. A bundle-ID
+  `AEDeterminePermissionToAutomateTarget` was sent to that entry and never returned. That
+  froze the AppleScript queue, so there was no cover, position, or controls. To spot it,
+  `sample EasyNotch` shows the queue stuck in that call.
+- **Cover downloads must expect the internet to drop out.** `ArtworkDownloader` gives each
+  attempt 10 s (the system default is 60 s) and retries after 3, 10, and 30 s. If every
+  attempt fails, the track isn't marked done, so the next update tries again. Failures are
+  logged at `notice` level, which macOS keeps. Debug lines aren't stored, so check the
+  stored log with `log show --predicate 'process == "EasyNotch"'` and look for NSURLError
+  -1001 (timed out).
 
 ## Shelf
 - **Drag detection never reads another app's pasteboard contents,** only its change counter

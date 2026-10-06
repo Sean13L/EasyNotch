@@ -152,4 +152,13 @@ struct MusicParsingTests {
         #expect(PlayerSnapshot.clock(3723) == "1:02:03")
         #expect(PlayerSnapshot.clock(-4) == "0:00")
     }
+
+    // MARK: - Permission
+
+    /// The permission check targets the running process, so a closed player is answered
+    /// right away rather than being looked up by bundle ID.
+    @Test func permissionForAClosedPlayerIsPlayerNotRunning() async {
+        let permission = await AppleScriptRunner().permission(for: "com.example.not-installed", askIfNeeded: false)
+        #expect(permission == .playerNotRunning)
+    }
 }
