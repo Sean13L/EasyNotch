@@ -57,9 +57,13 @@ private struct MeetingsOverview: View {
                 .frame(width: 250, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Coming up")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text("Coming up")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                    CompanionAppButton(app: .calendar)
+                }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(days, id: \.date) { day in

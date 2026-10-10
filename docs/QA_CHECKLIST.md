@@ -337,6 +337,12 @@ every rebuild.
         seconds
   - [ ] the speed disappears soon after the download ends
 
+### Companion apps
+- [ ] Each of these tabs has a small app icon that opens its app, with a tooltip on hover:
+  - [ ] Calendar tab (right of "Coming up"): Calendar
+  - [ ] System tab (bottom right): Activity Monitor
+  - [ ] Battery tab (top right): System Settings → Battery
+
 ### Priorities and cost
 - [ ] With music playing, plugging in the charger shows the flash first, then music comes
       back.

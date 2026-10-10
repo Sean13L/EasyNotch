@@ -463,6 +463,13 @@ window is in front, the notch stays open as a live preview.
   - `TransferDetector`, which needs 2 fast readings to start and 2 slow ones to stop
 - **Measured cost:** about 0.8% CPU while the tab samples, and 0% when it's closed.
 
+**Companion apps (`Shared/CompanionAppButton`).** A small app icon in a corner of a tab opens
+the Mac app that goes with it:
+- the Calendar tab opens Calendar
+- the System tab opens Activity Monitor
+- the Battery tab opens System Settings → Battery
+- Music already shows the player's own icon
+
 ### 6.8 Live activities when several things happen at once
 
 `LiveActivity.resolve` takes one `Candidates` struct and the tab that was on screen when the

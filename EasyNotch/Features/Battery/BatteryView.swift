@@ -33,6 +33,10 @@ struct BatteryView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 36)
+            .overlay(alignment: .topTrailing) {
+                CompanionAppButton(app: .batterySettings)
+                    .padding(.trailing, 24)
+            }
             .onAppear { battery.refresh() }
         } else {
             VStack(spacing: 6) {

@@ -42,6 +42,7 @@ struct SystemView: View {
                 Label(thermalText, systemImage: "thermometer.medium")
                     .foregroundStyle(monitor.thermalState == .nominal ? Color.secondary : .orange)
                 Spacer(minLength: 0)
+                CompanionAppButton(app: .activityMonitor)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
