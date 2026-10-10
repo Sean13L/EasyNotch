@@ -12,7 +12,12 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.2.0: published** at github.com/Sean13L/EasyNotch (2026-09-29), marked Latest.
+- **v1.2.1: published** at github.com/Sean13L/EasyNotch (2026-10-10), marked Latest.
+  - **Spotify cover:** fixed a hang in the permission check after Spotify restarts, and
+    cover downloads now retry when the connection drops (`ArtworkDownloader`).
+  - **Companion apps:** icons on the Battery, Calendar, and System tabs open the matching
+    app or System Settings page (`CompanionAppButton`).
+- **v1.2.0: published** at github.com/Sean13L/EasyNotch (2026-09-29).
   - **Music:** cover-colored sound bars (`ArtworkColor`), player-colored shuffle/repeat, and
     clicking the cover opens the player.
   - **Calendar:** a multi-day agenda (`calendarDaysAhead`) and an Internet Accounts hint for
