@@ -56,6 +56,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 struct SettingsView: View {
     let settings: AppSettings
     let nowPlaying: NowPlayingService
+    let spatialAudio: SpatialAudioController
     let calendar: CalendarService
     /// Reports the selected pane, so the window controller can start or stop the notch preview.
     let onPaneChange: (SettingsPane) -> Void
@@ -87,7 +88,7 @@ struct SettingsView: View {
             case .displays: DisplaysPane(settings: settings)
             case .modules: ModulesPane(settings: settings)
             case .size: SizePane(settings: settings, onPreviewChange: onSizePreviewChange)
-            case .music: MusicPane(settings: settings, nowPlaying: nowPlaying)
+            case .music: MusicPane(settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio)
             case .shelf: ShelfPane(settings: settings)
             case .calendar: CalendarPane(settings: settings, calendar: calendar)
             case .battery: BatteryPane(settings: settings)

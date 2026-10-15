@@ -84,6 +84,8 @@ extension BoolSetting {
     static let pomodoroNotifications = BoolSetting(key: "pomodoro.notifications", defaultValue: true)
     static let pomodoroSoundEnabled = BoolSetting(key: "pomodoro.soundEnabled", defaultValue: true)
     static let musicInNotch = BoolSetting(key: "music.showInNotch", defaultValue: true)
+    /// Keep Spatial Audio on for Spotify: relay its sound while it plays (see SpatialAudioController).
+    static let spatialAudioSpotify = BoolSetting(key: "music.spatialAudioSpotify", defaultValue: false)
     static let shelfOpenOnDrag = BoolSetting(key: "shelf.openOnDrag", defaultValue: true)
     static let shelfConfirmClear = BoolSetting(key: "shelf.confirmClear", defaultValue: true)
     static let shelfRemoveAfterDragOut = BoolSetting(key: "shelf.removeAfterDragOut", defaultValue: false)
@@ -96,7 +98,7 @@ extension BoolSetting {
     /// Every on/off setting, for export, import, and reset.
     static let all: [BoolSetting] = [
         hapticsEnabled, openOnClick, hideInFullScreen, autoStartBreaks, autoStartFocus, pomodoroInNotch,
-        pomodoroNotifications, pomodoroSoundEnabled, musicInNotch, shelfOpenOnDrag, shelfConfirmClear,
+        pomodoroNotifications, pomodoroSoundEnabled, musicInNotch, spatialAudioSpotify, shelfOpenOnDrag, shelfConfirmClear,
         shelfRemoveAfterDragOut, calendarInNotch, calendarShowAllDay, batteryChargingFlash, batteryLowWarning,
         systemTransferInNotch,
     ]
@@ -244,6 +246,8 @@ final class AppSettings {
     var musicPreferredPlayer = StringSetting.musicPreferredPlayer.defaultValue { didSet { save(musicPreferredPlayer, .musicPreferredPlayer) } }
     /// Show what's playing beside the closed notch.
     var musicInNotch = BoolSetting.musicInNotch.defaultValue { didSet { save(musicInNotch, .musicInNotch) } }
+    /// Relay Spotify through EasyNotch while it plays, so AirPods can apply Spatial Audio. Off for new installs.
+    var spatialAudioSpotify = BoolSetting.spatialAudioSpotify.defaultValue { didSet { save(spatialAudioSpotify, .spatialAudioSpotify) } }
     /// Seconds a paused track keeps showing beside the notch; -1 means until the player quits.
     var musicPausedLinger = NumericSetting.musicPausedLinger.defaultValue { didSet { save(musicPausedLinger, .musicPausedLinger) } }
 
@@ -385,6 +389,7 @@ final class AppSettings {
         pomodoroSound = Self.load(.pomodoroSound, from: defaults)
         musicPreferredPlayer = Self.load(.musicPreferredPlayer, from: defaults)
         musicInNotch = Self.load(.musicInNotch, from: defaults)
+        spatialAudioSpotify = Self.load(.spatialAudioSpotify, from: defaults)
         musicPausedLinger = Self.load(.musicPausedLinger, from: defaults)
         shelfOpenOnDrag = Self.load(.shelfOpenOnDrag, from: defaults)
         shelfMaxItems = Self.load(.shelfMaxItems, from: defaults)

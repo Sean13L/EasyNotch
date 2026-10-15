@@ -4,9 +4,32 @@ import SwiftUI
 struct MusicPane: View {
     @Bindable var settings: AppSettings
     let nowPlaying: NowPlayingService
+    let spatialAudio: SpatialAudioController
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Keep Spatial Audio on for Spotify", isOn: $settings.spatialAudioSpotify)
+                    .onChange(of: settings.spatialAudioSpotify) { _, _ in spatialAudio.userRequested() }
+                if settings.spatialAudioSpotify {
+                    LabeledContent("Status") {
+                        HStack(spacing: 8) {
+                            Text(spatialAudio.statusText)
+                                .foregroundStyle(spatialAudio.status == .relaying ? .green : .secondary)
+                            if spatialAudio.status == .needsPermission || spatialAudio.status == .failed {
+                                Button(spatialAudio.status == .failed ? "Try again" : "Allow…") {
+                                    spatialAudio.userRequested()
+                                }
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Spatial Audio")
+            } footer: {
+                Text("Plays Spotify through EasyNotch while it's playing, so AirPods can use Spatial Audio. Spotify's own copy is muted while this is on. Needs AirPods as the output and the Screen & System Audio Recording permission. Apple Music already works with Spatial Audio, so it isn't affected.")
+            }
+
             Section("Players") {
                 Picker("When several players are open, show", selection: $settings.musicPreferredPlayer) {
                     Text("Whichever is playing").tag("automatic")

@@ -96,6 +96,17 @@ open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
   stored log with `log show --predicate 'process == "EasyNotch"'` and look for NSURLError
   -1001 (timed out).
 
+## Spatial Audio (Spotify)
+- **Off for new installs.** It relays Spotify through EasyNotch (a Core Audio process tap, an
+  aggregate device, then `AVSampleBufferAudioRenderer`) so AirPods can apply Spatial Audio.
+  Apple Music doesn't need it.
+- **Permission is only asked by a user action.** `spatialAudio.permissionConfirmed` is set after a
+  successful start and cleared after a failed one. Background starts only run when it's set, so
+  they never trigger the "Screen & System Audio Recording" prompt.
+- **Needs macOS 14.2.** The tap API isn't in 14.0. The relay is `@available(macOS 14.2, *)`, and the
+  controller reports "Needs macOS 14.2 or later" on older systems.
+- **Quit Spatial Relay (shevlfs) first.** Both tap Spotify, and they conflict.
+
 ## Shelf
 - **Drag detection never reads another app's pasteboard contents,** only its change counter
   and list of types (see `FileDragDetector`). So no privacy prompt appears.

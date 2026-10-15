@@ -6,6 +6,7 @@ final class AppServices {
     let settings = AppSettings()
     let pomodoro: PomodoroController
     let nowPlaying: NowPlayingService
+    let spatialAudio: SpatialAudioController
     let shelf: ShelfStore
     let calendar: CalendarService
     let battery: BatteryService
@@ -22,6 +23,7 @@ final class AppServices {
     init() {
         pomodoro = PomodoroController(settings: settings)
         nowPlaying = NowPlayingService(settings: settings)
+        spatialAudio = SpatialAudioController(settings: settings, spotify: nowPlaying.spotify)
         shelf = ShelfStore(settings: settings)
         calendar = CalendarService(settings: settings)
         battery = BatteryService(settings: settings)
@@ -34,7 +36,9 @@ final class AppServices {
                 calendar: calendar, battery: battery, system: system
             )
         )
-        settingsWindow = SettingsWindowController(settings: settings, nowPlaying: nowPlaying, calendar: calendar)
+        settingsWindow = SettingsWindowController(
+            settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio, calendar: calendar
+        )
 
         // Wire the pieces together now that they all exist.
         screenManager.onShowSettings = { [weak self] in self?.showSettings() }
@@ -71,6 +75,7 @@ final class AppServices {
     func start() {
         pomodoro.activate()
         nowPlaying.activate()
+        spatialAudio.activate()
         calendar.activate()
         battery.activate()
         system.activate()

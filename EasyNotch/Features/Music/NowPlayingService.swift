@@ -5,6 +5,8 @@ import Observation
 @Observable
 final class NowPlayingService {
     let sources: [MediaPlayerSource]
+    /// Spotify's source, also used by the Spatial Audio relay.
+    let spotify: MediaPlayerSource
 
     /// Set when the user switches players by hand in the notch.
     private var choice: ActivePlayerPicker.Choice?
@@ -17,7 +19,8 @@ final class NowPlayingService {
     init(settings: AppSettings) {
         self.settings = settings
         let runner = AppleScriptRunner()
-        sources = [Spotify.profile, AppleMusic.profile].map { MediaPlayerSource(profile: $0, runner: runner) }
+        spotify = MediaPlayerSource(profile: Spotify.profile, runner: runner)
+        sources = [spotify, MediaPlayerSource(profile: AppleMusic.profile, runner: runner)]
     }
 
     /// Starts listening to the players. Called once at launch (never in tests).
