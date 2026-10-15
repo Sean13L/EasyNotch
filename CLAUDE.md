@@ -12,7 +12,11 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.2.1: published** at github.com/Sean13L/EasyNotch (2026-10-10), marked Latest.
+- **v1.2.2: published** at github.com/Sean13L/EasyNotch (2026-10-15), marked Latest.
+  - **Spatial Audio for Spotify** (off by default, Music settings): the relay plays Spotify
+    through EasyNotch so AirPods can use Spatial Audio. It starts and stops with playback.
+    Needs macOS 14.2 (`SpatialAudioRelay`, `SpatialAudioController`).
+- **v1.2.1: published** at github.com/Sean13L/EasyNotch (2026-10-10).
   - **Spotify cover:** fixed a hang in the permission check after Spotify restarts, and
     cover downloads now retry when the connection drops (`ArtworkDownloader`).
   - **Companion apps:** icons on the Battery, Calendar, and System tabs open the matching

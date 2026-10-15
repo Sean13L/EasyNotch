@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.2.1"
+    MARKETING_VERSION: "1.2.2"
     CURRENT_PROJECT_VERSION: "1"
     # Code runs on the main actor unless marked otherwise (BLUEPRINT D8).
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
@@ -38,6 +38,7 @@ targets:
         LSApplicationCategoryType: public.app-category.productivity
         # Agent app: no Dock icon, no app menu (BLUEPRINT D4).
         LSUIElement: true
+        NSAudioCaptureUsageDescription: EasyNotch plays Spotify through itself while it's playing, so AirPods can use Spatial Audio. Turn this off in EasyNotch's Music settings.
         NSAppleEventsUsageDescription: EasyNotch controls Spotify and Music so you can play, pause, and skip tracks from the notch.
         NSCalendarsFullAccessUsageDescription: EasyNotch shows your next meeting in the notch, with a button to join it. Events stay on your Mac.
         NSCalendarsUsageDescription: EasyNotch shows your next meeting in the notch, with a button to join it. Events stay on your Mac.
