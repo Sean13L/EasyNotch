@@ -38,6 +38,9 @@ nonisolated final class SpatialAudioRelay: @unchecked Sendable {
     /// Frames sent so far; gives each chunk its place in time.
     private var framesSent: Int64 = 0
     private var playbackStarted = false
+    /// Samples gathered from Core Audio, waiting to go out. Written on Core Audio's thread under `inputLock`.
+    private let inputLock = NSLock()
+    private var inputPending: [Float] = []
 
     /// The audio format of the tap. Set before the audio callback starts.
     private var tapFormat = AudioStreamBasicDescription()
@@ -110,6 +113,7 @@ nonisolated final class SpatialAudioRelay: @unchecked Sendable {
                 running = true
                 framesSent = 0
                 playbackStarted = false
+                inputLock.withLock { inputPending.removeAll() }
                 renderer.allowedAudioSpatializationFormats = .monoStereoAndMultichannel
                 synchronizer.addRenderer(renderer)
                 synchronizer.setRate(0, time: .zero)
@@ -147,13 +151,26 @@ nonisolated final class SpatialAudioRelay: @unchecked Sendable {
 
     // MARK: - Audio
 
-    /// Called by Core Audio many times a second. Copies the chunk and passes it on quickly.
+    /// Called by Core Audio many times a second. Adds the chunk to the pending samples, and once
+    /// about 50 ms have gathered, hands them to `queue`. Nothing is allocated per call except
+    /// that occasional hand-off.
     private func receive(_ input: UnsafePointer<AudioBufferList>) {
-        let samples = Self.interleaved(input, format: tapFormat)
-        queue.async { [weak self] in self?.enqueue(samples) }
+        let batchSamples = Int(sampleRate / 20) * Int(tapFormat.mChannelsPerFrame)
+        var batch: Data?
+        inputLock.lock()
+        Self.appendInterleaved(input, format: tapFormat, into: &inputPending)
+        if inputPending.count >= batchSamples {
+            batch = inputPending.withUnsafeBufferPointer { Data(buffer: $0) }
+            inputPending.removeAll(keepingCapacity: true)
+        }
+        inputLock.unlock()
+
+        if let batch {
+            queue.async { [weak self] in self?.enqueue(batch) }
+        }
     }
 
-    /// Runs on `queue`: wraps one chunk of samples in a sample buffer and queues it for playback.
+    /// Wraps one batch of samples in a sample buffer and queues it for playback. Runs on `queue`.
     private func enqueue(_ samples: Data) {
         guard running, let formatDescription else { return }
         let frames = samples.count / bytesPerFrame
@@ -172,7 +189,7 @@ nonisolated final class SpatialAudioRelay: @unchecked Sendable {
             )
         }
 
-        // Each chunk starts where the previous one ended, so playback never has gaps or overlaps.
+        // Each batch starts where the previous one ended, so playback never has gaps or overlaps.
         var timing = CMSampleTimingInfo(
             duration: CMTime(value: 1, timescale: sampleRate),
             presentationTimeStamp: CMTime(value: framesSent, timescale: sampleRate),
@@ -197,29 +214,32 @@ nonisolated final class SpatialAudioRelay: @unchecked Sendable {
         }
     }
 
-    /// Turns a chunk from Core Audio into one run of interleaved 32-bit float samples.
+    /// Appends one chunk from Core Audio to `output` as interleaved 32-bit float samples.
     /// Runs on Core Audio's thread, so it only reads and copies.
-    private static func interleaved(_ input: UnsafePointer<AudioBufferList>, format: AudioStreamBasicDescription) -> Data {
+    private static func appendInterleaved(
+        _ input: UnsafePointer<AudioBufferList>, format: AudioStreamBasicDescription, into output: inout [Float]
+    ) {
         let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         let channels = Int(format.mChannelsPerFrame)
-        let isInterleaved = format.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
-        guard let first = buffers.first, channels > 0 else { return Data() }
+        guard let first = buffers.first, channels > 0 else { return }
 
-        if isInterleaved {
-            guard let data = first.mData else { return Data() }
-            return Data(bytes: data, count: Int(first.mDataByteSize))
+        if format.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0 {
+            guard let data = first.mData else { return }
+            let count = Int(first.mDataByteSize) / 4
+            output.append(contentsOf: UnsafeBufferPointer(start: data.assumingMemoryBound(to: Float.self), count: count))
+            return
         }
 
         // One buffer per channel: weave them together, frame by frame.
         let frames = Int(first.mDataByteSize) / 4
-        var output = [Float](repeating: 0, count: frames * channels)
+        let start = output.count
+        output.append(contentsOf: repeatElement(0, count: frames * channels))
         for (channel, buffer) in buffers.enumerated() where channel < channels {
             guard let source = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
             for frame in 0..<frames {
-                output[frame * channels + channel] = source[frame]
+                output[start + frame * channels + channel] = source[frame]
             }
         }
-        return output.withUnsafeBufferPointer { Data(buffer: $0) }
     }
 
     // MARK: - Core Audio helpers
