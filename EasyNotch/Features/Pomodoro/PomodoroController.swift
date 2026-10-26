@@ -25,6 +25,7 @@ final class PomodoroController {
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let notifier = PomodoroNotifier()
+    @ObservationIgnored private let alarm = PomodoroAlarm()
     @ObservationIgnored private var completionTask: Task<Void, Never>?
     @ObservationIgnored private var wakeObserver: NSObjectProtocol?
     /// Held while a timer runs so App Nap doesn't throttle the once-a-second countdown.
@@ -68,6 +69,7 @@ final class PomodoroController {
 
     /// The main button: Start, Pause, or Resume depending on the state.
     func startPauseOrResume() {
+        alarm.stop()
         switch engine.status {
         case .idle: engine.start(now: .now, config: config)
         case .running: engine.pause(now: .now)
@@ -78,12 +80,14 @@ final class PomodoroController {
     }
 
     func skip() {
+        alarm.stop()
         let countBefore = engine.completedFocusSessions
         let event = engine.skip(now: .now, config: config)
         handle(event, countedFocus: engine.completedFocusSessions > countBefore, playSound: false)
     }
 
     func reset() {
+        alarm.stop()
         engine.reset()
         Log.pomodoro.notice("Pomodoro reset")
         phaseTimingChanged()
@@ -101,7 +105,7 @@ final class PomodoroController {
         Log.pomodoro.notice("Pomodoro \(event.finished.rawValue, privacy: .public) → \(event.next.rawValue, privacy: .public)\(event.wasSkipped ? " (skipped)" : "", privacy: .public)\(event.nextStartedAutomatically ? ", auto-started" : "", privacy: .public)")
         if countedFocus { countFocusSessionToday() }
         if playSound, settings.pomodoroSoundEnabled {
-            NSSound(named: NSSound.Name(settings.pomodoroSound))?.play()
+            alarm.ring(soundName: settings.pomodoroSound)
         }
         phaseTimingChanged()
     }
