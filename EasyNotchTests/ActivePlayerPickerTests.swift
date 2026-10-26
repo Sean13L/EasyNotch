@@ -74,6 +74,9 @@ struct ActivePlayerPickerTests {
         #expect(LiveActivity.resolve(Candidates(lowBattery: true, bigTransfer: true)) == .battery)
         #expect(LiveActivity.resolve(Candidates(bigTransfer: true, timerPaused: true)) == .network)
         #expect(LiveActivity.resolve(Candidates(timerPaused: true)) == .pomodoro)
+        // A finished phase beats everything, until the notch is opened.
+        #expect(LiveActivity.resolve(Candidates(chargingFlash: true, phaseEnded: true)) == .pomodoroAlert)
+        #expect(LiveActivity.resolve(Candidates(phaseEnded: true, timerRunning: true)) == .pomodoroAlert)
     }
 
     @Test func theLastViewedTabWins() {

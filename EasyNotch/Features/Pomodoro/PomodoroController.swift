@@ -12,6 +12,10 @@ final class PomodoroController {
         didSet { save() }
     }
 
+    /// The phase that just ended, until the user opens the notch or acts on the timer.
+    /// Drives the flashing alert beside the notch.
+    private(set) var finishedPhase: PomodoroPhase?
+
     /// Focus sessions finished today (resets at midnight).
     var sessionsToday: Int {
         Calendar.current.isDateInToday(statsDay) ? focusSessionsOnStatsDay : 0
@@ -68,8 +72,14 @@ final class PomodoroController {
     // MARK: - Actions
 
     /// The main button: Start, Pause, or Resume depending on the state.
-    func startPauseOrResume() {
+    /// The user has seen the end-of-phase alert: they opened the notch or acted on the timer.
+    func acknowledgeAlert() {
         alarm.stop()
+        finishedPhase = nil
+    }
+
+    func startPauseOrResume() {
+        acknowledgeAlert()
         switch engine.status {
         case .idle: engine.start(now: .now, config: config)
         case .running: engine.pause(now: .now)
@@ -80,14 +90,14 @@ final class PomodoroController {
     }
 
     func skip() {
-        alarm.stop()
+        acknowledgeAlert()
         let countBefore = engine.completedFocusSessions
         let event = engine.skip(now: .now, config: config)
         handle(event, countedFocus: engine.completedFocusSessions > countBefore, playSound: false)
     }
 
     func reset() {
-        alarm.stop()
+        acknowledgeAlert()
         engine.reset()
         Log.pomodoro.notice("Pomodoro reset")
         phaseTimingChanged()
@@ -107,6 +117,7 @@ final class PomodoroController {
         if playSound, settings.pomodoroSoundEnabled {
             alarm.ring(soundName: settings.pomodoroSound)
         }
+        if playSound { finishedPhase = event.finished }
         phaseTimingChanged()
     }
 

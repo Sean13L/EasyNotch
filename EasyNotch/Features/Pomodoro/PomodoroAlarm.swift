@@ -5,8 +5,8 @@ import AppKit
 /// keep going.
 @MainActor
 final class PomodoroAlarm {
-    private static let repeatCount = 8
-    private static let gap: Duration = .milliseconds(1500)
+    private static let repeatCount = 16
+    private static let gap: Duration = .milliseconds(500)
 
     private var task: Task<Void, Never>?
 

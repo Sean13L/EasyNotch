@@ -22,6 +22,7 @@ struct CompactView: View {
     @ViewBuilder private var leadingWing: some View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .leading)
+        case .pomodoroAlert: PomodoroAlertView(side: .leading)
         case .music: MusicCompactView(side: .leading)
         case .meeting: MeetingCompactView(side: .leading)
         case .battery: BatteryCompactView(side: .leading)
@@ -33,6 +34,7 @@ struct CompactView: View {
     @ViewBuilder private var trailingWing: some View {
         switch activity {
         case .pomodoro: PomodoroCompactView(side: .trailing)
+        case .pomodoroAlert: PomodoroAlertView(side: .trailing)
         case .music: MusicCompactView(side: .trailing)
         case .meeting: MeetingCompactView(side: .trailing)
         case .battery: BatteryCompactView(side: .trailing)

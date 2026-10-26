@@ -47,9 +47,10 @@ final class AppServices {
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
         // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
-        screenManager.onNotchOpened = { [calendar, battery] in
+        screenManager.onNotchOpened = { [calendar, battery, pomodoro] in
             calendar.acknowledgeAlerts()
             battery.acknowledgeAlerts()
+            pomodoro.acknowledgeAlert()
         }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.
@@ -61,6 +62,7 @@ final class AppServices {
             // Each service already applies its own "show beside the notch" setting.
             return LiveActivity.resolve(.init(
                 chargingFlash: showBattery && battery.isFlashing,
+                phaseEnded: settings.pomodoroNotifications && visible.contains(.pomodoro) && pomodoro.finishedPhase != nil,
                 meetingSoon: visible.contains(.calendar) && calendar.liveMeeting != nil,
                 timerRunning: showTimer && pomodoro.engine.isRunning,
                 musicPlaying: showMusic && nowPlaying.isPlaying,

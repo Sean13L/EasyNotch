@@ -1,6 +1,8 @@
 /// Something a feature wants to show beside the closed notch (the "compact" state).
 enum LiveActivity: Equatable {
     case pomodoro
+    /// A focus or break just ended. Flashes until the user opens the notch.
+    case pomodoroAlert
     case music
     case meeting
     /// The charging flash or a low-battery warning.
@@ -13,7 +15,7 @@ enum LiveActivity: Equatable {
     /// The tab to show when the notch opens from this activity.
     var module: NotchModule? {
         switch self {
-        case .pomodoro: .pomodoro
+        case .pomodoro, .pomodoroAlert: .pomodoro
         case .music: .music
         case .meeting: .calendar
         case .battery: .battery
@@ -26,6 +28,7 @@ enum LiveActivity: Equatable {
     /// user's settings (e.g. "show beside the notch" and hidden tabs).
     struct Candidates: Equatable {
         var chargingFlash = false
+        var phaseEnded = false
         var meetingSoon = false
         var timerRunning = false
         var musicPlaying = false
@@ -62,6 +65,7 @@ enum LiveActivity: Equatable {
             (candidates.bigTransfer, .network),
             (candidates.timerPaused, .pomodoro),
         ]
+        if candidates.phaseEnded { return .pomodoroAlert }
         if candidates.chargingFlash { return .battery }
         if candidates.meetingSoon { return .meeting }
         if candidates.lowBattery { return .battery }
