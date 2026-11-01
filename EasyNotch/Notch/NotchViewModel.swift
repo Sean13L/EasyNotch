@@ -39,6 +39,8 @@ final class NotchViewModel {
     @ObservationIgnored var onStateChange: ((NotchState) -> Void)?
     /// Called whenever the notch opens (not for Settings previews), e.g. to mark alerts as seen.
     @ObservationIgnored var onOpen: (() -> Void)?
+    /// Called whenever the notch closes (not for Settings previews).
+    @ObservationIgnored var onClose: (() -> Void)?
     /// Called when the gear button is pressed.
     @ObservationIgnored var onShowSettings: (() -> Void)?
 
@@ -196,6 +198,16 @@ final class NotchViewModel {
         onShowSettings?()
     }
 
+    /// Opens the notch on the Pomodoro tab to get the user's attention. It stays open (like the
+    /// keyboard shortcut) until the user moves the pointer in and out, or clicks outside.
+    func showAttention() {
+        guard preview == nil else { return }
+        cancelPendingTransition()
+        if visibleModules.contains(.pomodoro) { selectedModule = .pomodoro }
+        setState(.open)
+        isHeldOpen = true
+    }
+
     // MARK: - Private
 
     /// The hover and click area: wider while a live activity shows its wings.
@@ -262,5 +274,6 @@ final class NotchViewModel {
         }
         onStateChange?(newState)
         if newState == .open, preview == nil { onOpen?() }
+        if newState == .closed, preview == nil { onClose?() }
     }
 }

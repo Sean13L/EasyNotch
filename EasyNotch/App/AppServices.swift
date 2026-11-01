@@ -47,10 +47,16 @@ final class AppServices {
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
         // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
-        screenManager.onNotchOpened = { [calendar, battery, pomodoro] in
+        screenManager.onNotchOpened = { [calendar, battery] in
             calendar.acknowledgeAlerts()
             battery.acknowledgeAlerts()
+        }
+        // The Pomodoro alert stays until the notch closes, so an auto-opened notch keeps flashing.
+        screenManager.onNotchClosed = { [pomodoro] in
             pomodoro.acknowledgeAlert()
+        }
+        pomodoro.onPhaseEnded = { [weak self, settings] in
+            if settings.pomodoroNotifications { self?.screenManager.showAttention() }
         }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.

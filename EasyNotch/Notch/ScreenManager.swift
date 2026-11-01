@@ -10,6 +10,8 @@ final class ScreenManager {
     var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
     /// Called when any notch opens.
     var onNotchOpened: (() -> Void)?
+    /// Called when any notch closes.
+    var onNotchClosed: (() -> Void)?
 
     private let settings: AppSettings
     private let mouseTracker: MouseTracker
@@ -103,6 +105,11 @@ final class ScreenManager {
         }
     }
 
+    /// Opens every notch on the Pomodoro tab, to get the user's attention.
+    func showAttention() {
+        controllers.values.forEach { $0.viewModel.showAttention() }
+    }
+
     private func syncScreens() {
         let chosen = chosenScreens()
         for (id, metrics) in chosen {
@@ -114,6 +121,7 @@ final class ScreenManager {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
                 controller.viewModel.liveActivityProvider = liveActivityProvider
                 controller.viewModel.onOpen = { [weak self] in self?.onNotchOpened?() }
+                controller.viewModel.onClose = { [weak self] in self?.onNotchClosed?() }
                 controller.viewModel.setPreview(preview)
                 controllers[id] = controller
             }

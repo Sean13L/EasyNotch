@@ -30,6 +30,8 @@ final class PomodoroController {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let notifier = PomodoroNotifier()
     @ObservationIgnored private let alarm = PomodoroAlarm()
+    /// Called when a phase ends on its own (not on Skip). Set by `AppServices`, which opens the notch.
+    @ObservationIgnored var onPhaseEnded: (() -> Void)?
     @ObservationIgnored private var completionTask: Task<Void, Never>?
     @ObservationIgnored private var wakeObserver: NSObjectProtocol?
     /// Held while a timer runs so App Nap doesn't throttle the once-a-second countdown.
@@ -117,7 +119,10 @@ final class PomodoroController {
         if playSound, settings.pomodoroSoundEnabled {
             alarm.ring(soundName: settings.pomodoroSound)
         }
-        if playSound { finishedPhase = event.finished }
+        if playSound {
+            finishedPhase = event.finished
+            onPhaseEnded?()
+        }
         phaseTimingChanged()
     }
 

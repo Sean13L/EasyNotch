@@ -1,5 +1,19 @@
 import SwiftUI
 
+/// An orange border that pulses around the expanded Pomodoro tab while a phase-end alert is
+/// pending, so the open notch grabs attention.
+struct AttentionFlash: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .strokeBorder(.orange, lineWidth: 3)
+            .phaseAnimator([0.0, 1.0]) { view, opacity in
+                view.opacity(opacity)
+            } animation: { _ in .easeInOut(duration: 0.35) }
+            .padding(2)
+            .allowsHitTesting(false)
+    }
+}
+
 /// The timer's alert beside the closed notch, shown when a focus or break ends. A bouncing
 /// bell on the left wing and "Done" on the right, until the user opens the notch.
 struct PomodoroAlertView: View {
