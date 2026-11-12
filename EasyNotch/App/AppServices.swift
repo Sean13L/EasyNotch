@@ -39,7 +39,8 @@ final class AppServices {
             )
         )
         settingsWindow = SettingsWindowController(
-            settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio, calendar: calendar
+            settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio, calendar: calendar,
+            claude: claude
         )
 
         // Wire the pieces together now that they all exist.
