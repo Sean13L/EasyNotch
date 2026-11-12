@@ -9,13 +9,18 @@ struct ClaudePane: View {
     /// What to show in red after a failed Connect, Disconnect, or Reconnect.
     @State private var errorMessage: String?
 
-    /// The system red is too light to read as body text on a white settings window
-    /// (about 3.6:1), so light mode uses a darker red. Dark mode keeps the system red.
+    /// The system reds miss AA (4.5:1) as body text on the grouped Form's row fill, so both
+    /// modes use a custom red. Ratios are computed from WCAG relative luminance:
+    /// - Light: sRGB(0.70, 0.10, 0.10), luminance 0.104, on a white row (1.0): about 6.8:1.
+    ///   (System red is about 3.6:1 there.)
+    /// - Dark: sRGB(1.0, 0.55, 0.50), luminance 0.416, on the dark row fill (about
+    ///   #2C2C2E to #323232, luminance 0.025 to 0.032): about 5.7:1 to 6.2:1.
+    ///   (Dark system red, luminance 0.258, is only about 3.8:1 to 4.1:1 there.)
     private static let errorColor = Color(nsColor: NSColor(name: nil) { appearance in
         let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         return isDark
-            ? .systemRed
-            : NSColor(srgbRed: 0.70, green: 0.10, blue: 0.10, alpha: 1)  // about 7:1 on white
+            ? NSColor(srgbRed: 1.0, green: 0.55, blue: 0.50, alpha: 1)
+            : NSColor(srgbRed: 0.70, green: 0.10, blue: 0.10, alpha: 1)
     })
 
     var body: some View {
@@ -82,7 +87,7 @@ struct ClaudePane: View {
         } catch {
             // Log the error type only; its description could contain file paths.
             Log.claude.error("Claude connect/disconnect failed: \(String(describing: type(of: error)), privacy: .public)")
-            errorMessage = "EasyNotch couldn't start listening for Claude Code. Try again, or restart EasyNotch."
+            errorMessage = "EasyNotch couldn't start listening for Claude Code. Disconnect and connect again, or restart EasyNotch."
         }
     }
 }
