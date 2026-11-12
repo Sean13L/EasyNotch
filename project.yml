@@ -49,6 +49,15 @@ targets:
         com.apple.security.automation.apple-events: true
         # Hardened Runtime blocks Calendar access without this (BLUEPRINT D5).
         com.apple.security.personal-information.calendars: true
+    dependencies:
+      # The command-line helper Claude Code runs; it ends up in EasyNotch.app/Contents/Helpers.
+      - target: easynotch-claude
+        embed: true
+        link: false
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.seanl.easynotch
@@ -59,6 +68,20 @@ targets:
           # Xcode adds "get-task-allow" (lets debuggers attach) when signing for development.
           # Shipped builds must not have it.
           CODE_SIGN_INJECT_BASE_ENTITLEMENTS: "NO"
+
+  easynotch-claude:
+    type: tool
+    platform: macOS
+    # Only the three Shared files it needs: no app types, no Log.
+    sources:
+      - path: EasyNotchHelper
+      - path: EasyNotch/Shared/ClaudeBridgeMessage.swift
+      - path: EasyNotch/Shared/ClaudeHookTranslator.swift
+      - path: EasyNotch/Shared/ClaudeBridgeClient.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.seanl.easynotch.claude
+        ENABLE_HARDENED_RUNTIME: "YES"
 
   EasyNotchTests:
     type: bundle.unit-test
