@@ -32,6 +32,13 @@ struct ClaudeSetup {
                 .appending(path: "Contents/Helpers/easynotch-claude").path)
     }
 
+    /// True when macOS is running the app from a random read-only copy (App Translocation),
+    /// which happens to an unnotarized app opened straight from Downloads. A hook pointing
+    /// there breaks as soon as the app quits, so connecting must wait until it's moved.
+    static func isTranslocated(bundlePath: String) -> Bool {
+        bundlePath.contains("/AppTranslocation/")
+    }
+
     // MARK: Status
 
     private func writeBackup(_ data: Data) throws {

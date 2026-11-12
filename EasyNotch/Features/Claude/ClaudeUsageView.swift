@@ -13,10 +13,10 @@ struct ClaudeUsageView: View {
             TimelineView(.everyMinute) { context in
                 VStack(alignment: .leading, spacing: 6) {
                     if let window = usage.fiveHour {
-                        row("5h", window, now: context.date)
+                        row("5h", spokenLabel: "5-hour usage", window, now: context.date)
                     }
                     if let window = usage.sevenDay {
-                        row("Week", window, now: context.date)
+                        row("Week", spokenLabel: "Weekly usage", window, now: context.date)
                     }
                     Text(Self.updatedText(usage.updatedAt, now: context.date))
                         .font(.system(size: 10))
@@ -29,14 +29,16 @@ struct ClaudeUsageView: View {
     /// 70% white on the black notch is about 10:1, well above the 4.5:1 AA minimum.
     static let secondary = Color.white.opacity(0.7)
 
-    private func row(_ label: String, _ window: UsageWindow, now: Date) -> some View {
+    /// `spokenLabel` is what VoiceOver reads; the short `label` is only for the eye.
+    private func row(_ label: String, spokenLabel: String, _ window: UsageWindow, now: Date) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 11, weight: .semibold))
                 .frame(width: 34, alignment: .leading)
+                .accessibilityHidden(true)  // the bar's label says it in full
             ProgressView(value: Self.clampedPercent(window.usedPercentage), total: 100)
                 .tint(accent)
-                .accessibilityLabel("\(label) usage")
+                .accessibilityLabel(spokenLabel)
                 .accessibilityValue("\(Self.percentText(window.usedPercentage)) percent")
             Text(Self.percentText(window.usedPercentage) + "%")
                 .font(.system(size: 11, weight: .medium).monospacedDigit())

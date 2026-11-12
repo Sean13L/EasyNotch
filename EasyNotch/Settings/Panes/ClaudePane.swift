@@ -9,6 +9,15 @@ struct ClaudePane: View {
     /// What to show in red after a failed Connect, Disconnect, or Reconnect.
     @State private var errorMessage: String?
 
+    /// Running from a translocated copy (see `ClaudeSetup.isTranslocated`): Connect and
+    /// Reconnect would point Claude Code at a path that disappears.
+    private let isTranslocated = ClaudeSetup.isTranslocated(bundlePath: Bundle.main.bundleURL.path)
+
+    /// Connect and Reconnect are off while translocated; Disconnect always works.
+    private var actionDisabled: Bool {
+        isTranslocated && claude.setupStatus != .connected
+    }
+
     /// The system reds miss AA (4.5:1) as body text on the grouped Form's row fill, so both
     /// modes use a custom red. Ratios are computed from WCAG relative luminance:
     /// - Light: sRGB(0.70, 0.10, 0.10), luminance 0.104, on a white row (1.0): about 6.8:1.
@@ -31,6 +40,12 @@ struct ClaudePane: View {
                 }
                 LabeledContent(actionHint) {
                     Button(buttonTitle, action: perform)
+                        .disabled(actionDisabled)
+                }
+                if actionDisabled {
+                    Text("Move EasyNotch to your Applications folder before connecting Claude Code.")
+                        .foregroundStyle(Self.errorColor)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 if let errorMessage {
                     Text(errorMessage)

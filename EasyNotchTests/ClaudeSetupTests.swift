@@ -29,6 +29,13 @@ struct ClaudeSetupTests {
 
     var quotedHelper: String { ShellQuote.quote(Self.helper) }
 
+    @Test func translocatedCopiesAreDetected() {
+        #expect(ClaudeSetup.isTranslocated(bundlePath:
+            "/private/var/folders/x/AppTranslocation/1234-ABCD/d/EasyNotch.app"))
+        #expect(!ClaudeSetup.isTranslocated(bundlePath: "/Applications/EasyNotch.app"))
+        #expect(!ClaudeSetup.isTranslocated(bundlePath: "/Users/me/Downloads/EasyNotch.app"))
+    }
+
     @Test func connectCreatesFileWhenMissing() throws {
         let dir = try makeFolder()
         let s = setup(dir)
