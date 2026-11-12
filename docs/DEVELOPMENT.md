@@ -188,6 +188,12 @@ open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
   are no keyboard shortcuts: the notch panel never becomes key (`NotchPanel.canBecomeKey`).
 - **Our entries are recognised by a command containing `easynotch-claude`.** Disconnect
   removes anything matching, even if the path is from another copy of the app.
+- **Usage only arrives when Claude Code redraws its status line** (a new reply, `/compact`,
+  session start, or a window resetting), so an idle session sends nothing. EasyNotch saves the
+  last numbers in its preferences (`claude.lastUsage`) and shows them with "Updated N min ago";
+  a window past its `resets_at` shows 0% and "reset". The status line's `refreshInterval` wouldn't
+  help: Claude Code only learns new limits from an API response, so it would just resend the same
+  numbers.
 - **Backups:** `settings.json.easynotch-backup` is written only the first time (when the file
   has none of our entries), so Reconnect can't overwrite the untouched original. It keeps the
   settings file's permissions. A status line that was already there is saved whole in

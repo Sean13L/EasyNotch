@@ -126,8 +126,9 @@ companion and isn't affiliated with Anthropic.
 (`~/Library/Application Support/EasyNotch/claude.sock`) that only your user can open. It opens no
 network port and sends nothing anywhere. It passes the tool name, a short summary of what it
 wants to do, and the project folder name to the notch. From the status line it also passes your
-5-hour and weekly usage percentages and reset times. All of it stays on your Mac, and EasyNotch
-stores none of it.
+5-hour and weekly usage percentages and reset times. All of it stays on your Mac. EasyNotch
+never stores requests; it remembers only the last usage numbers, so the Claude tab isn't blank
+after a restart, and Disconnect forgets them.
 
 **Good to know:**
 - If EasyNotch isn't running, is quitting, or you hide the Claude tab, Claude Code asks in

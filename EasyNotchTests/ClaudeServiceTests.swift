@@ -40,7 +40,7 @@ private struct Rig {
         let clock = self.clock
         settings = AppSettings(defaults: defaults)
         service = ClaudeService(
-            settings: settings, now: { clock.date },
+            settings: settings, defaults: defaults, now: { clock.date },
             setup: { ClaudeSetup(settingsURL: setupURL, helperPath: "/tmp/easynotch-claude") },
             socketURL: folder.appending(path: "s.sock"))
         if connected { try service.connect() }
@@ -134,6 +134,30 @@ private struct Rig {
             #expect(rig.service.usage?.fiveHour == nil)
             #expect(rig.service.usage?.sevenDay == window)
             #expect(rig.service.usage?.updatedAt == rig.clock.date)
+        }
+    }
+
+    @Test func usageIsRememberedAcrossRelaunch() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let window = UsageWindow(usedPercentage: 42, resetsAt: Date(timeIntervalSince1970: 1_000_500))
+            rig.service.receive(.usage(fiveHour: window, sevenDay: nil), from: FakeConnection())
+            // A fresh service on the same preferences, as after quitting and reopening EasyNotch.
+            let relaunched = ClaudeService(settings: rig.settings, defaults: defaults)
+            #expect(relaunched.usage == rig.service.usage)
+            #expect(relaunched.usage?.fiveHour == window)
+            #expect(relaunched.usage?.sevenDay == nil)
+        }
+    }
+
+    @Test func disconnectForgetsSavedUsage() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let window = UsageWindow(usedPercentage: 42, resetsAt: Date(timeIntervalSince1970: 1_000_500))
+            rig.service.receive(.usage(fiveHour: window, sevenDay: nil), from: FakeConnection())
+            try rig.service.disconnect()
+            #expect(rig.service.usage == nil)
+            #expect(ClaudeService(settings: rig.settings, defaults: defaults).usage == nil)
         }
     }
 
@@ -373,5 +397,14 @@ struct ClaudeUsageTextTests {
         #expect(ClaudeUsageView.percentText(42.4) == "42")
         #expect(ClaudeUsageView.updatedText(now - 300, now: now) == "Updated 5 min ago")
         #expect(ClaudeUsageView.updatedText(now - 10, now: now) == "Updated just now")
+    }
+
+    @Test func aWindowPastItsResetShowsZero() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let past = UsageWindow(usedPercentage: 80, resetsAt: now - 1)
+        let future = UsageWindow(usedPercentage: 80, resetsAt: now + 60)
+        #expect(ClaudeUsageView.displayedPercent(past, now: now) == 0)
+        #expect(ClaudeUsageView.displayedPercent(future, now: now) == 80)
+        #expect(ClaudeUsageView.resetText(now - 1, now: now) == "reset")
     }
 }
