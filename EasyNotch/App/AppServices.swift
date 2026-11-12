@@ -11,6 +11,7 @@ final class AppServices {
     let calendar: CalendarService
     let battery: BatteryService
     let system: SystemMonitor
+    let claude: ClaudeService
     private let mouseTracker = MouseTracker()
     private let hotKey = HotKeyCenter()
     private let screenManager: ScreenManager
@@ -28,6 +29,7 @@ final class AppServices {
         calendar = CalendarService(settings: settings)
         battery = BatteryService(settings: settings)
         system = SystemMonitor(settings: settings)
+        claude = ClaudeService(settings: settings)
         screenManager = ScreenManager(
             settings: settings,
             mouseTracker: mouseTracker,
@@ -47,9 +49,10 @@ final class AppServices {
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
         // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
-        screenManager.onNotchOpened = { [calendar, battery] in
+        screenManager.onNotchOpened = { [calendar, battery, claude] in
             calendar.acknowledgeAlerts()
             battery.acknowledgeAlerts()
+            claude.acknowledgeAlerts()
         }
         // The Pomodoro alert stays until the notch closes, so an auto-opened notch keeps flashing.
         screenManager.onNotchClosed = { [pomodoro] in
@@ -87,6 +90,7 @@ final class AppServices {
         calendar.activate()
         battery.activate()
         system.activate()
+        claude.activate()
         screenManager.start()
         watchShortcut()
         #if DEBUG
