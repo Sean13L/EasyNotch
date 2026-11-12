@@ -50,10 +50,17 @@ final class AppServices {
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
         // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
-        screenManager.onNotchOpened = { [calendar, battery, claude] in
+        // Claude's alert is different: it clears only when its tab is actually on screen
+        // (`ClaudeView` tells the service), since the notch may open on another tab.
+        screenManager.onNotchOpened = { [calendar, battery] in
             calendar.acknowledgeAlerts()
             battery.acknowledgeAlerts()
-            claude.acknowledgeAlerts()
+        }
+        // A Claude request needs a notch to be seen in; with none on screen it goes back to
+        // the terminal. Closures keep the Claude feature from knowing about notch windows.
+        claude.isNotchVisible = { [screenManager] in screenManager.hasVisibleNotch }
+        screenManager.onVisibilityChange = { [claude] visible in
+            claude.notchVisibilityChanged(visible)
         }
         // The Pomodoro alert stays until the notch closes, so an auto-opened notch keeps flashing.
         screenManager.onNotchClosed = { [pomodoro] in

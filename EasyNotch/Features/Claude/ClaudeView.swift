@@ -35,6 +35,10 @@ struct ClaudeView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        // This view exists only while an open notch shows the Claude tab, so this is when
+        // its requests have really been seen.
+        .onAppear { claude.tabAppeared() }
+        .onDisappear { claude.tabDisappeared() }
     }
 
     private func notice(_ text: String, button: String) -> some View {
@@ -88,10 +92,10 @@ private struct RequestPanel: View {
     private func buttons(enabled: Bool) -> some View {
         HStack {
             Spacer()
+            // No keyboard shortcuts: the notch never takes keyboard focus (NotchPanel), and a
+            // stray Return must never approve anything. Click to answer.
             Button("Deny") { claude.deny(request.id) }
-                .keyboardShortcut(.cancelAction)
             Button("Allow") { claude.allow(request.id) }
-                .keyboardShortcut(.defaultAction)
         }
         .disabled(!enabled)
     }

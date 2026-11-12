@@ -4,6 +4,8 @@ import Observation
 /// What the service needs from a socket connection. `Connection` conforms; tests use a fake.
 nonisolated protocol ClaudeConnection: AnyObject, Sendable {
     var id: UUID { get }
+    /// True once the connection is closed (by either side). Safe to read from any thread.
+    var isClosed: Bool { get }
     func reply(_ message: ClaudeBridgeMessage)
     func close()
 }
@@ -31,9 +33,11 @@ struct ClaudeUsage: Equatable {
 @Observable
 final class ClaudeService {
     /// Whenever a different request becomes the front of the queue (an answer, a hangup, or
-    /// a first arrival), it ignores answers for this long, so a click or keypress aimed at
-    /// the old request can't land on the new one.
+    /// a first arrival), it ignores answers for this long, so a click aimed at the old
+    /// request can't land on the new one as the front changes under the pointer.
     static let answerGuard: TimeInterval = 0.5
+    /// More waiting requests than this are handed straight back to the terminal.
+    static let maxPending = 32
 
     /// Requests waiting for an answer, oldest first.
     private(set) var pending: [ClaudeRequest] = []
@@ -44,6 +48,10 @@ final class ClaudeService {
 
     private var alertAcknowledged = false
 
+    /// Whether any notch window is on screen. Set by `AppServices` (it asks the notch layer,
+    /// which this feature can't see). With no notch visible, a request would wait unseen.
+    @ObservationIgnored var isNotchVisible: () -> Bool = { true }
+
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let makeSetup: () -> ClaudeSetup
@@ -53,6 +61,8 @@ final class ClaudeService {
     @ObservationIgnored private let socketURLOverride: URL?
     @ObservationIgnored private var server: ClaudeBridgeServer?
     @ObservationIgnored private let moduleName = NotchModule.claude.rawValue
+    /// How many open notches are showing the Claude tab right now (one per screen at most).
+    @ObservationIgnored private var tabShowingCount = 0
 
     /// `setup` is injectable so tests never touch the real `~/.claude`.
     init(
@@ -78,8 +88,23 @@ final class ClaudeService {
         }
     }
 
-    func acknowledgeAlerts() {
+    /// The Claude tab came on screen (`ClaudeView` appeared): its requests count as seen.
+    /// Opening the notch on another tab doesn't, or a request could wait with no wing.
+    func tabAppeared() {
+        tabShowingCount += 1
         alertAcknowledged = true
+    }
+
+    func tabDisappeared() {
+        tabShowingCount = max(0, tabShowingCount - 1)
+    }
+
+    /// Every notch window went away (lid closed with only the built-in display chosen, or
+    /// hidden over a full-screen app): hand waiting requests back to the terminal.
+    func notchVisibilityChanged(_ visible: Bool) {
+        guard !visible, !pending.isEmpty else { return }
+        Log.claude.info("no notch visible; returning requests to the terminal")
+        closeAllPending()
     }
 
     func canAnswer(_ id: UUID) -> Bool {
@@ -116,8 +141,12 @@ final class ClaudeService {
             // A hidden tab means the user doesn't want prompts here: closing the connection
             // makes the helper fall back to the terminal prompt.
             // No server running means this message was already in flight when we stopped, and
-            // no hangup will ever come for it.
-            guard server != nil, !settings.hiddenModules.contains(moduleName) else {
+            // no hangup will ever come for it. The same goes for a connection that's already
+            // closed (its server was stopped while this message hopped to the main actor).
+            // With no notch on screen, or too many already waiting, nobody would see it.
+            guard server != nil, !connection.isClosed, !settings.hiddenModules.contains(moduleName),
+                  isNotchVisible(), pending.count < Self.maxPending
+            else {
                 connection.close()
                 return
             }
@@ -125,7 +154,8 @@ final class ClaudeService {
             connections[connection.id] = connection
             pending.append(ClaudeRequest(
                 id: connection.id, tool: tool, summary: summary, project: project, receivedAt: now()))
-            alertAcknowledged = false
+            // If the tab is on screen right now, the user is already looking at it.
+            alertAcknowledged = tabShowingCount > 0
             updateFront()
         case .usage(let fiveHour, let sevenDay):
             usage = ClaudeUsage(fiveHour: fiveHour, sevenDay: sevenDay, updatedAt: now())

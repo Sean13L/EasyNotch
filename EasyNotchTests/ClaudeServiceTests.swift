@@ -8,6 +8,7 @@ private final class FakeConnection: ClaudeConnection, @unchecked Sendable {
     let id = UUID()
     private(set) var replies: [ClaudeBridgeMessage] = []
     private(set) var closeCount = 0
+    var isClosed = false
     func reply(_ message: ClaudeBridgeMessage) { replies.append(message) }
     func close() { closeCount += 1 }
 }
@@ -136,16 +137,84 @@ private struct Rig {
         }
     }
 
-    @Test func alertClearsOnAcknowledgeAndReturnsOnNewRequest() throws {
+    @Test func alertClearsWhenTheTabShowsAndReturnsOnNewRequest() throws {
         try withIsolatedDefaults { defaults in
             let rig = try Rig(defaults); defer { rig.cleanup() }
             #expect(!rig.service.showsAlert)
             rig.service.receive(request("a"), from: FakeConnection())
             #expect(rig.service.showsAlert)
-            rig.service.acknowledgeAlerts()
+            rig.service.tabAppeared()
+            #expect(!rig.service.showsAlert)
+            rig.service.tabDisappeared()
             #expect(!rig.service.showsAlert)
             rig.service.receive(request("b"), from: FakeConnection())
             #expect(rig.service.showsAlert)
+        }
+    }
+
+    @Test func requestArrivingWhileTheTabShowsRaisesNoAlert() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            rig.service.tabAppeared()
+            rig.service.receive(request("a"), from: FakeConnection())
+            #expect(!rig.service.showsAlert)
+            // Two notches (two screens) can show the tab; it counts as shown until both go.
+            rig.service.tabAppeared()
+            rig.service.tabDisappeared()
+            rig.service.receive(request("b"), from: FakeConnection())
+            #expect(!rig.service.showsAlert)
+            rig.service.tabDisappeared()
+            rig.service.receive(request("c"), from: FakeConnection())
+            #expect(rig.service.showsAlert)
+        }
+    }
+
+    @Test func requestWithNoVisibleNotchIsClosed() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            rig.service.isNotchVisible = { false }
+            let connection = FakeConnection()
+            rig.service.receive(request("a"), from: connection)
+            #expect(connection.closeCount == 1)
+            #expect(connection.replies.isEmpty)
+            #expect(rig.service.pending.isEmpty)
+        }
+    }
+
+    @Test func notchesDisappearingClosesWaitingRequests() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let connection = FakeConnection()
+            rig.service.receive(request("a"), from: connection)
+            rig.service.notchVisibilityChanged(true)
+            #expect(rig.service.pending.count == 1)
+            rig.service.notchVisibilityChanged(false)
+            #expect(rig.service.pending.isEmpty)
+            #expect(connection.closeCount == 1)
+            #expect(connection.replies.isEmpty)
+        }
+    }
+
+    @Test func alreadyClosedConnectionIsIgnored() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let connection = FakeConnection()
+            connection.isClosed = true
+            rig.service.receive(request("a"), from: connection)
+            #expect(rig.service.pending.isEmpty)
+        }
+    }
+
+    @Test func pendingRequestsAreCapped() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            for i in 0..<ClaudeService.maxPending { rig.service.receive(request("\(i)"), from: FakeConnection()) }
+            let extra = FakeConnection()
+            rig.service.receive(request("extra"), from: extra)
+            #expect(rig.service.pending.count == ClaudeService.maxPending)
+            #expect(ClaudeService.maxPending == 32)
+            #expect(extra.closeCount == 1)
+            #expect(extra.replies.isEmpty)
         }
     }
 
