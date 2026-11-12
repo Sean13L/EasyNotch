@@ -125,18 +125,20 @@ companion and isn't affiliated with Anthropic.
 **What stays on your Mac:** the helper talks to EasyNotch through a private file
 (`~/Library/Application Support/EasyNotch/claude.sock`) that only your user can open. It opens no
 network port and sends nothing anywhere. It passes the tool name, a short summary of what it
-wants to do, and the project folder name to the notch, and stores none of it.
+wants to do, and the project folder name to the notch. From the status line it also passes your
+5-hour and weekly usage percentages and reset times. All of it stays on your Mac, and EasyNotch
+stores none of it.
 
 **Good to know:**
 - If EasyNotch isn't running, is quitting, or you hide the Claude tab, Claude Code asks in
   the terminal as usual. Pressing Ctrl-C in Claude removes the request from the notch.
-- Your own deny rules in Claude Code still win over **Allow**.
+- Your own deny rules in Claude Code still win over **Allow**, per Claude Code's hook docs.
 - A request can only be answered from the notch half a second after it becomes the front one.
 - If you move EasyNotch to another folder, press **Reconnect**. Until then, Claude Code asks
   in the terminal.
 
 **To undo it:** press **Disconnect** in Settings → Claude Code. It removes only EasyNotch's
-hook and status line and puts your original status line back. You can also delete those
+hook and status line and puts your original status line back (if you didn't have one, EasyNotch's is simply removed). You can also delete those
 entries by hand, or restore `settings.json.easynotch-backup` over `settings.json`. Any command
 containing `easynotch-claude` is EasyNotch's.
 
