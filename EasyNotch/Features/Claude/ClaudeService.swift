@@ -52,8 +52,7 @@ final class ClaudeService {
     @ObservationIgnored private var frontSince = Date.distantPast
     @ObservationIgnored private let socketURLOverride: URL?
     @ObservationIgnored private var server: ClaudeBridgeServer?
-    /// R5: `NotchModule.claude` doesn't exist yet; the tab's raw name stands in for it.
-    @ObservationIgnored private let moduleName = "claude"
+    @ObservationIgnored private let moduleName = NotchModule.claude.rawValue
 
     /// `setup` is injectable so tests never touch the real `~/.claude`.
     init(

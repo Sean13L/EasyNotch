@@ -290,3 +290,15 @@ private struct Rig {
         }
     }
 }
+
+struct ClaudeUsageTextTests {
+    @Test func resetAndUpdatedTexts() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(ClaudeUsageView.resetText(now + 2 * 3600 + 10 * 60 + 5, now: now) == "resets in 2h 10m")
+        #expect(ClaudeUsageView.resetText(now + 25 * 60, now: now) == "resets in 25m")
+        #expect(ClaudeUsageView.resetText(now + 30 * 3600, now: now).hasPrefix("resets ") == true)
+        #expect(!ClaudeUsageView.resetText(now + 30 * 3600, now: now).contains(" in "))
+        #expect(ClaudeUsageView.updatedText(now - 300, now: now) == "Updated 5 min ago")
+        #expect(ClaudeUsageView.updatedText(now - 10, now: now) == "Updated just now")
+    }
+}

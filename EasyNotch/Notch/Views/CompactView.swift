@@ -27,6 +27,7 @@ struct CompactView: View {
         case .meeting: MeetingCompactView(side: .leading)
         case .battery: BatteryCompactView(side: .leading)
         case .network: NetworkCompactView(side: .leading)
+        case .claudeRequest: ClaudeCompactView(side: .leading)
         case .placeholder: PlaceholderWing()
         }
     }
@@ -39,6 +40,7 @@ struct CompactView: View {
         case .meeting: MeetingCompactView(side: .trailing)
         case .battery: BatteryCompactView(side: .trailing)
         case .network: NetworkCompactView(side: .trailing)
+        case .claudeRequest: ClaudeCompactView(side: .trailing)
         case .placeholder: PlaceholderWing()
         }
     }

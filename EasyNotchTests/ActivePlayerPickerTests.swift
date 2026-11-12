@@ -79,6 +79,18 @@ struct ActivePlayerPickerTests {
         #expect(LiveActivity.resolve(Candidates(phaseEnded: true, timerRunning: true)) == .pomodoroAlert)
     }
 
+    @Test func claudeRequestBeatsOtherAlertsButNotPomodoroAlert() {
+        typealias Candidates = LiveActivity.Candidates
+        var candidates = Candidates(chargingFlash: true, meetingSoon: true, lowBattery: true, claudeWaiting: true)
+        #expect(LiveActivity.resolve(candidates) == .claudeRequest)
+        candidates.phaseEnded = true
+        #expect(LiveActivity.resolve(candidates) == .pomodoroAlert)
+    }
+
+    @Test func claudeRequestOpensClaudeTab() {
+        #expect(LiveActivity.claudeRequest.module == .claude)
+    }
+
     @Test func theLastViewedTabWins() {
         typealias Candidates = LiveActivity.Candidates
         let timerAndMusic = Candidates(timerRunning: true, musicPlaying: true)

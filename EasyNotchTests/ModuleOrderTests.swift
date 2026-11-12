@@ -4,16 +4,20 @@ import Testing
 
 struct ModuleOrderTests {
     @Test func aSavedOrderIsCleanedUp() {
-        #expect(NotchModule.ordered(from: []) == [.music, .shelf, .pomodoro, .calendar, .battery, .system])
+        #expect(NotchModule.ordered(from: []) == [.music, .shelf, .pomodoro, .calendar, .battery, .system, .claude])
         // A 1.0 order (three tabs) gets the new tabs added at the end.
-        #expect(NotchModule.ordered(from: ["pomodoro", "music", "shelf"]) == [.pomodoro, .music, .shelf, .calendar, .battery, .system])
+        #expect(NotchModule.ordered(from: ["pomodoro", "music", "shelf"]) == [.pomodoro, .music, .shelf, .calendar, .battery, .system, .claude])
         // Repeats and unknown names are dropped; missing modules are added at the end.
-        #expect(NotchModule.ordered(from: ["shelf", "shelf", "weather"]) == [.shelf, .music, .pomodoro, .calendar, .battery, .system])
+        #expect(NotchModule.ordered(from: ["shelf", "shelf", "weather"]) == [.shelf, .music, .pomodoro, .calendar, .battery, .system, .claude])
+    }
+
+    @Test func newModuleAppendsToSavedOrder() {
+        #expect(NotchModule.ordered(from: ["music", "shelf", "pomodoro", "calendar", "battery", "system"]).last == .claude)
     }
 
     @Test func hiddenTabsAreLeftOutButOneAlwaysStays() {
-        let order = ["pomodoro", "music", "shelf", "calendar", "battery", "system"]
-        #expect(NotchModule.visible(order: order, hidden: ["music", "calendar"]) == [.pomodoro, .shelf, .battery, .system])
+        let order = ["pomodoro", "music", "shelf", "calendar", "battery", "system", "claude"]
+        #expect(NotchModule.visible(order: order, hidden: ["music", "calendar"]) == [.pomodoro, .shelf, .battery, .system, .claude])
         #expect(NotchModule.visible(order: order, hidden: order) == [.pomodoro])
     }
 

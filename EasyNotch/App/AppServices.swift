@@ -35,7 +35,7 @@ final class AppServices {
             mouseTracker: mouseTracker,
             features: NotchFeatures(
                 pomodoro: pomodoro, nowPlaying: nowPlaying, shelf: shelf,
-                calendar: calendar, battery: battery, system: system
+                calendar: calendar, battery: battery, system: system, claude: claude
             )
         )
         settingsWindow = SettingsWindowController(
@@ -63,7 +63,7 @@ final class AppServices {
         }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.
-        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system] preferred in
+        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system, claude] preferred in
             let visible = NotchModule.visible(order: settings.moduleOrder, hidden: settings.hiddenModules)
             let showTimer = settings.pomodoroInNotch && visible.contains(.pomodoro) && pomodoro.engine.isActive
             let showMusic = settings.musicInNotch && visible.contains(.music)
@@ -78,7 +78,8 @@ final class AppServices {
                 musicRecentlyPaused: showMusic && nowPlaying.showsPausedTrack,
                 lowBattery: showBattery && battery.showsLowWarning,
                 bigTransfer: visible.contains(.system) && system.isTransferring,
-                timerPaused: showTimer && !pomodoro.engine.isRunning
+                timerPaused: showTimer && !pomodoro.engine.isRunning,
+                claudeWaiting: visible.contains(.claude) && claude.showsAlert
             ), preferring: preferred)
         }
     }

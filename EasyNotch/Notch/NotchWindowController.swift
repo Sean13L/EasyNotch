@@ -9,6 +9,7 @@ struct NotchFeatures {
     let calendar: CalendarService
     let battery: BatteryService
     let system: SystemMonitor
+    let claude: ClaudeService
 }
 
 /// Owns the notch window for one screen and keeps it in sync with the view model and the
@@ -40,6 +41,7 @@ final class NotchWindowController {
             .environment(features.calendar)
             .environment(features.battery)
             .environment(features.system)
+            .environment(features.claude)
         let hostingView = NotchHostingView(rootView: rootView)
         // Without this, SwiftUI would resize the window to fit its content; we size it ourselves.
         hostingView.sizingOptions = []
