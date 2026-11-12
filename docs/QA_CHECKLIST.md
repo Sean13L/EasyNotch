@@ -354,3 +354,91 @@ every rebuild.
 - [ ] A meeting about to start wins over a running timer or music.
 - [ ] Hidden tabs never show anything beside the notch.
 - [ ] CPU stays about 0% while idle with nothing playing and the System tab closed.
+
+---
+
+## v1.3: Claude Code (permission requests and usage in the notch)
+
+You walk this one yourself with a real `claude` session. Don't test with your everyday
+project: use a throwaway folder (for example `mkdir /tmp/demo`). Write down each result.
+
+**Handy:** to fake a request without Claude, run
+`echo '{"tool_name":"Bash","tool_input":{"command":"npm test"},"cwd":"/tmp/demo"}' | /Applications/EasyNotch.app/Contents/Helpers/easynotch-claude permission`
+(the reply prints in the terminal; Allow or Deny in the notch).
+
+### Connect
+- [ ] Before connecting, the Claude tab says "Connect Claude Code to answer permission requests
+      from the notch." with an **Open Settings** button that opens Settings.
+- [ ] Settings → Claude Code shows "Not connected". Press **Connect**: it shows "Connected".
+- [ ] `~/.claude/settings.json` now has a `PermissionRequest` hook running `easynotch-claude
+      permission` (timeout 86400) and a `statusLine` running `easynotch-claude statusline`.
+      Everything else you had is still there (key order may differ).
+- [ ] `settings.json.easynotch-backup` exists next to it and matches your original.
+- [ ] Pressing **Reconnect/Disconnect/Connect** again never creates duplicate entries, and the
+      backup still holds the original (not a copy of an already-connected file).
+- [ ] If you had your own status line, it still shows in Claude Code after connecting.
+
+### Allow and deny
+- [ ] Start `claude` in `/tmp/demo` and ask it to run a command that needs permission (for
+      example "run `ls`"). With the notch closed, the notch shows a terminal icon and a count
+      beside it, and the command.
+- [ ] No prompt appears in the terminal while the request waits.
+- [ ] Open the notch: the Claude tab shows the project, tool, and command, and **Deny** and
+      **Allow**. **Allow** runs the command in Claude.
+- [ ] Repeat and press **Deny**: Claude says the use was denied and carries on without it.
+- [ ] Pressing a button within half a second of the request appearing does nothing (a guard
+      against clicking by accident). The next try works.
+- [ ] A request waiting more than 10 minutes can still be answered from the notch (this
+      confirms Claude Code accepts the 24 h hook timeout).
+- [ ] A rule in your Claude settings that denies a command still wins over **Allow**.
+
+### Several requests
+- [ ] Start two `claude` sessions in different folders and trigger a request in each. The tab
+      shows "1 of 2", the oldest first, with its folder name. Answer it and the second
+      appears. Only the front one can be answered.
+
+### When a request goes away
+- [ ] Press Ctrl-C in Claude while a request waits: the request leaves the notch.
+- [ ] Quit EasyNotch while a request waits: Claude shows its normal terminal prompt.
+- [ ] Hide the Claude tab (Settings → Modules) while a request waits: the terminal prompt
+      appears. New requests go to the terminal while the tab is hidden, and come back to the
+      notch when you show it again.
+- [ ] With EasyNotch not running, Claude works as before and asks in the terminal.
+
+### Usage
+- [ ] Before any message, the tab says "Usage appears after your next Claude message (Pro, Max,
+      and Ultra plans)."
+- [ ] After one message to Claude, the 5-hour and weekly bars appear with a percentage and
+      reset time. Compare with Claude's own `/usage`.
+- [ ] If your plan has no usage figures, nothing breaks and the hint stays.
+
+### Beside the notch
+- [ ] The wings show a request, and stay up until you open the notch. A new request after that
+      brings them back.
+- [ ] They win over the charging flash, meeting, and battery wings, but not a Pomodoro alert.
+
+### Keyboard and VoiceOver
+- [ ] With a request showing: Return allows, Escape denies. Tab reaches both buttons with a
+      visible focus ring.
+- [ ] VoiceOver reads the command (the summary) for the request, and each bar as "5-hour usage,
+      N percent" and "Weekly usage, N percent".
+
+### Moving the app
+- [ ] Move EasyNotch to another folder and open it: Settings → Claude Code says "EasyNotch
+      moved — reconnect", and the tab says "EasyNotch moved. Reconnect in Settings."
+- [ ] Until you reconnect, Claude asks in the terminal. **Reconnect** fixes it, with no duplicate
+      entries in `settings.json`.
+
+### Disconnect
+- [ ] Press **Disconnect**: the status reads "Not connected", the hook and status line are gone
+      from `settings.json`, and anything else you had is intact.
+- [ ] If you had your own status line, it is back exactly as it was.
+- [ ] Claude Code (new session) asks permissions in the terminal again.
+
+### Safety
+- [ ] Put something invalid in `settings.json` (for example a stray `}`): Connect and
+      Disconnect refuse, say the file couldn't be read, and leave it unchanged. Restore it
+      afterwards.
+- [ ] `ls -ld ~/Library/Application\ Support/EasyNotch` shows `drwx------` and
+      `ls -l ~/Library/Application\ Support/EasyNotch/claude.sock` shows `srw-------`.
+- [ ] CPU stays about 0% while idle with Claude connected and no request waiting.

@@ -154,6 +154,41 @@ open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
 - **`getifaddrs` byte counters are 32-bit and wrap around.** Use wrapping subtraction (`&-`),
   and skip `lo0`, `utun*`, and other virtual interfaces.
 
+## Claude Code
+- **How it fits together:** Claude Code runs `EasyNotch.app/Contents/Helpers/easynotch-claude`
+  as a `PermissionRequest` hook and as the status line. The helper talks to the app over
+  `~/Library/Application Support/EasyNotch/claude.sock` (D15). `ClaudeBridgeServer` is the
+  app side, `ClaudeService` holds the queue, `ClaudeSetup` edits `~/.claude/settings.json`.
+- **Try the helper by hand,** with EasyNotch running and connected:
+  ```bash
+  echo '{"tool_name":"Bash","tool_input":{"command":"npm test"},"cwd":"/tmp/demo"}' \
+    | build/Build/Products/Debug/EasyNotch.app/Contents/Helpers/easynotch-claude permission
+  ```
+  Allow or Deny in the notch and the JSON reply prints. No output means "no decision", which
+  is what Claude Code treats as "show the terminal prompt".
+- **Unix socket paths are limited to 104 bytes** on macOS. The real path is short enough, but
+  tests must not use the long temporary folder: they use `/tmp/en-xxxx/s.sock`.
+- **No answer is always safe.** Hiding the Claude tab, Disconnect, quitting, or a request
+  arriving with nothing listening closes the connection with no reply, so Claude Code asks in
+  the terminal. In `.needsReconnect` (the app was moved) no listener runs at all.
+- **Only the front request is answerable, and only 0.5 s after it became the front**
+  (`ClaudeService.answerGuard`). This stops a stray click or Return from approving a command
+  the user never read. It covers answers, Ctrl-C in Claude, and new arrivals.
+- **Our entries are recognised by a command containing `easynotch-claude`.** Disconnect
+  removes anything matching, even if the path is from another copy of the app.
+- **Backups:** `settings.json.easynotch-backup` is written only the first time (when the file
+  has none of our entries), so Reconnect can't overwrite the untouched original. It keeps the
+  settings file's permissions. A status line that was already there is saved whole in
+  `settings.json.easynotch-statusline` and restored on Disconnect.
+- **Broken pipe:** the helper ignores SIGPIPE, and a wrapped status-line command run through
+  `/bin/sh -c` inherits that. A pipeline such as `… | head` in the user's original status
+  line may then print "Broken pipe". Harmless, and left as is.
+- **Hook timeout:** we set 86400 s. Claude Code's docs name no maximum (the default is 600 s);
+  the QA checklist has an item that confirms a request waiting over 10 minutes still works.
+- **Never log the summary:** log the tool name and connection events only (`Log.claude`).
+- **Don't touch the real `~/.claude` in tests.** `ClaudeSetup` takes the settings URL, so
+  tests use temporary folders.
+
 ## Settings and SwiftUI
 - **Adding an option:**
   1. Add it to `AppSettings` with a default.
