@@ -1,5 +1,9 @@
 import Foundation
 
+// A status-line command that exits without reading its input would otherwise kill us with
+// SIGPIPE when we write to it. We always want to exit 0.
+signal(SIGPIPE, SIG_IGN)
+
 // easynotch-claude: run by Claude Code as a PermissionRequest hook ("permission") and as its
 // status line ("statusline [--then <command>]"). It talks to the EasyNotch app over a Unix
 // socket. Whatever goes wrong (app not running, bad input), it exits 0 with no output, so
@@ -20,9 +24,8 @@ let input = FileHandle.standardInput.readDataToEndOfFile()
 switch arguments.first {
 case "permission":
     if let request = ClaudeHookTranslator.request(fromHookInput: input),
-       case .decision(let allow)? = ClaudeBridgeClient.ask(request, to: socketURL),
-       allow {
-        FileHandle.standardOutput.write(ClaudeHookTranslator.hookOutput(allow: true))
+       case .decision(let allow)? = ClaudeBridgeClient.ask(request, to: socketURL) {
+        FileHandle.standardOutput.write(ClaudeHookTranslator.hookOutput(allow: allow))
     }
 
 case "statusline":
@@ -34,12 +37,12 @@ case "statusline":
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", arguments[2]]
-        let stdin = Pipe()
-        process.standardInput = stdin
+        let inPipe = Pipe()
+        process.standardInput = inPipe
         process.standardOutput = FileHandle.standardOutput  // its output is ours
         if (try? process.run()) != nil {
-            try? stdin.fileHandleForWriting.write(contentsOf: input)
-            try? stdin.fileHandleForWriting.close()
+            try? inPipe.fileHandleForWriting.write(contentsOf: input)
+            try? inPipe.fileHandleForWriting.close()
             process.waitUntilExit()
         }
     }
