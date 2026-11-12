@@ -193,4 +193,48 @@ struct ClaudeSetupTests {
         #expect(json["model"] as? String == "x")
         #expect(json["hooks"] != nil)
     }
+
+    @Test func reconnectKeepsOriginalBackup() throws {
+        let dir = try makeFolder()
+        let original = "{ \"model\" :   \"x\" }\n"
+        try write(original, to: dir)
+        try setup(dir).connect()
+        try setup(dir).connect()
+        try setup(dir, helper: Self.otherHelper).connect()
+        #expect(try Data(contentsOf: dir.appending(path: "settings.json.easynotch-backup")) == Data(original.utf8))
+    }
+
+    @Test func fileIsWrittenWithoutEscapedSlashes() throws {
+        let dir = try makeFolder()
+        let s = setup(dir)
+        try s.connect()
+        let text = try String(contentsOf: s.settingsURL, encoding: .utf8)
+        #expect(text.contains("/Apps/Sean"))
+        #expect(!text.contains("\\/"))
+    }
+
+    @Test func backupCopiesSettingsPermissions() throws {
+        let dir = try makeFolder()
+        let s = setup(dir)
+        try write(#"{"env":{"K":"secret"}}"#, to: dir)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: s.settingsURL.path)
+        try s.connect()
+        let attrs = try FileManager.default.attributesOfItem(atPath: dir.appending(path: "settings.json.easynotch-backup").path)
+        #expect((attrs[.posixPermissions] as? NSNumber)?.intValue == 0o600)
+    }
+
+    @Test func staleSidecarIsNotRestoredLater() throws {
+        let dir = try makeFolder()
+        let s = setup(dir)
+        try write(#"{"statusLine":{"type":"command","command":"line-A"}}"#, to: dir)
+        try s.connect()
+        // Owner deletes the status line by hand, then disconnects.
+        var json = try read(s.settingsURL)
+        json.removeValue(forKey: "statusLine")
+        try JSONSerialization.data(withJSONObject: json).write(to: s.settingsURL)
+        try s.disconnect()
+        try s.connect()
+        try s.disconnect()
+        #expect(try read(s.settingsURL)["statusLine"] == nil)
+    }
 }

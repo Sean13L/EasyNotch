@@ -34,8 +34,21 @@ struct ClaudeSetup {
 
     // MARK: Status
 
-    func status() -> Status {
-        guard let root = try? load().root else { return .disconnected }
+    private func writeBackup(_ data: Data) throws {
+        try data.write(to: backupURL, options: .atomic)
+        // Settings can hold API keys, so the backup gets the same permissions.
+        let target = settingsURL.resolvingSymlinksInPath()
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: target.path),
+           let perms = attrs[.posixPermissions] {
+            try FileManager.default.setAttributes([.posixPermissions: perms], ofItemAtPath: backupURL.path)
+        }
+    }
+
+    private func hasOurEntries(_ root: [String: Any]) -> Bool {
+        !ourCommands(in: root).isEmpty
+    }
+
+    private func ourCommands(in root: [String: Any]) -> [String] {
         var commands: [String] = []
         if let hooks = root["hooks"] as? [String: Any] {
             for case let groups as [Any] in hooks.values {
@@ -47,7 +60,12 @@ struct ClaudeSetup {
             }
         }
         if let c = (root["statusLine"] as? [String: Any])?["command"] as? String { commands.append(c) }
-        let ours = commands.filter { $0.contains(Self.marker) }
+        return commands.filter { $0.contains(Self.marker) }
+    }
+
+    func status() -> Status {
+        guard let root = try? load().root else { return .disconnected }
+        let ours = ourCommands(in: root)
         if ours.isEmpty { return .disconnected }
         // Commands hold the shell-quoted path, so an apostrophe in it appears as '\''.
         let quoted = ShellQuote.quote(helperPath)
@@ -74,6 +92,7 @@ struct ClaudeSetup {
         // Status line. `original` is what the owner had before us (nil if nothing).
         let ours = "\(ShellQuote.quote(helperPath)) statusline"
         var line = root2["statusLine"] as? [String: Any]
+        let hadNoStatusLine = line == nil
         var sidecarToWrite: [String: Any]?
         var wrapped: String?
         if let current = line, !isOurs(current) {
@@ -88,7 +107,10 @@ struct ClaudeSetup {
         root2["statusLine"] = line
 
         // Write order: backup, sidecar, then the settings file itself.
-        if let original { try original.write(to: backupURL, options: .atomic) }
+        // Back up only a file with none of our entries; on Reconnect the existing backup
+        // is the owner's untouched copy and must stay.
+        if let original, !hasOurEntries(root) { try writeBackup(original) }
+        if hadNoStatusLine { try? FileManager.default.removeItem(at: sidecarURL) } // stale sidecar
         if let sidecarToWrite { try writeJSON(sidecarToWrite, to: sidecarURL) }
         try writeJSON(root2, to: settingsURL.resolvingSymlinksInPath())
     }
@@ -189,7 +211,7 @@ struct ClaudeSetup {
 
     private func writeJSON(_ object: [String: Any], to url: URL) throws {
         let data = try JSONSerialization.data(
-            withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
+            withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
         try FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url, options: .atomic)
