@@ -22,7 +22,9 @@ struct ClaudeRequest: Identifiable, Equatable {
 }
 
 /// The latest rate-limit numbers from Claude Code. A window that was never reported stays nil.
-struct ClaudeUsage: Equatable {
+/// `Codable` so the last numbers survive a relaunch: Claude Code only sends them when its status
+/// line redraws, which can be a long time while a session sits idle.
+struct ClaudeUsage: Equatable, Codable {
     var fiveHour: UsageWindow?
     var sevenDay: UsageWindow?
     var updatedAt: Date
@@ -41,7 +43,9 @@ final class ClaudeService {
 
     /// Requests waiting for an answer, oldest first.
     private(set) var pending: [ClaudeRequest] = []
-    private(set) var usage: ClaudeUsage?
+    private(set) var usage: ClaudeUsage? {
+        didSet { saveUsage() }
+    }
     private(set) var setupStatus: ClaudeSetup.Status = .disconnected
     /// True when there are waiting requests the user hasn't seen since the last new one.
     var showsAlert: Bool { !pending.isEmpty && !alertAcknowledged }
@@ -53,6 +57,7 @@ final class ClaudeService {
     @ObservationIgnored var isNotchVisible: () -> Bool = { true }
 
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let makeSetup: () -> ClaudeSetup
     @ObservationIgnored private var connections: [UUID: ClaudeConnection] = [:]
@@ -66,12 +71,14 @@ final class ClaudeService {
 
     /// `setup` is injectable so tests never touch the real `~/.claude`.
     init(
-        settings: AppSettings, now: @escaping () -> Date = Date.init,
+        settings: AppSettings, defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init,
         setup: @escaping () -> ClaudeSetup = { ClaudeSetup.live() },
         socketURL: URL? = nil
     ) {
         self.settings = settings
+        self.defaults = defaults
         self.now = now
+        usage = Self.loadUsage(from: defaults)
         self.makeSetup = setup
         self.socketURLOverride = socketURL
         watchHiddenTab()
@@ -131,6 +138,25 @@ final class ClaudeService {
         server?.stop()
         server = nil
         closeAllPending()
+        usage = nil  // also forgets the saved numbers
+    }
+
+    // MARK: - Saved usage
+
+    /// Only the two percentages, their reset times, and when they arrived. Never request data.
+    private static let usageKey = "claude.lastUsage"
+
+    private static func loadUsage(from defaults: UserDefaults) -> ClaudeUsage? {
+        guard let data = defaults.data(forKey: usageKey) else { return nil }
+        return try? JSONDecoder().decode(ClaudeUsage.self, from: data)
+    }
+
+    private func saveUsage() {
+        if let usage, let data = try? JSONEncoder().encode(usage) {
+            defaults.set(data, forKey: Self.usageKey)
+        } else {
+            defaults.removeObject(forKey: Self.usageKey)
+        }
     }
 
     // MARK: - Messages from the server

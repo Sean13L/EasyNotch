@@ -36,11 +36,12 @@ struct ClaudeUsageView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .frame(width: 34, alignment: .leading)
                 .accessibilityHidden(true)  // the bar's label says it in full
-            ProgressView(value: Self.clampedPercent(window.usedPercentage), total: 100)
+            let percent = Self.displayedPercent(window, now: now)
+            ProgressView(value: Self.clampedPercent(percent), total: 100)
                 .tint(accent)
                 .accessibilityLabel(spokenLabel)
-                .accessibilityValue("\(Self.percentText(window.usedPercentage)) percent")
-            Text(Self.percentText(window.usedPercentage) + "%")
+                .accessibilityValue("\(Self.percentText(percent)) percent")
+            Text(Self.percentText(percent) + "%")
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
                 .frame(width: 34, alignment: .trailing)
             Text(Self.resetText(window.resetsAt, now: now))
@@ -52,13 +53,19 @@ struct ClaudeUsageView: View {
 
     static func clampedPercent(_ value: Double) -> Double { min(max(value, 0), 100) }
 
+    /// Once a window's reset time has passed its usage is back to zero, even if Claude Code
+    /// hasn't sent fresh numbers yet (the saved ones can be hours old after a relaunch).
+    static func displayedPercent(_ window: UsageWindow, now: Date) -> Double {
+        window.resetsAt <= now ? 0 : window.usedPercentage
+    }
+
     /// The whole-number percentage, clamped to 0...100 ("100" for 130).
     static func percentText(_ value: Double) -> String { String(Int(clampedPercent(value).rounded())) }
 
     /// "resets in 2h 10m", or the weekday ("resets Thu") when it is more than a day away.
     static func resetText(_ date: Date, now: Date, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
         let seconds = date.timeIntervalSince(now)
-        if seconds <= 0 { return "resetting" }
+        if seconds <= 0 { return "reset" }
         if seconds > 24 * 3600 {
             return "resets " + date.formatted(Date.FormatStyle(locale: locale, timeZone: timeZone).weekday(.abbreviated))
         }

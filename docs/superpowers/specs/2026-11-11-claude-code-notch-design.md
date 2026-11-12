@@ -227,8 +227,10 @@ changes), and the CLAUDE.md Status section when it ships.
 
 ## 9. Global standards checklist
 - **Applied:**
-  - **16:** the helper sends only the tool, summary, and project, and nothing is stored on
-    disk.
+  - **16:** the helper sends only the tool, summary, and project, and no request data is
+    stored on disk. Only the last usage numbers (two percentages, their reset times, and when
+    they arrived) are saved in EasyNotch's preferences, so they survive a relaunch; Disconnect
+    deletes them.
   - **21:** an SF Symbol rather than the Claude trademark.
   - **28:** AA contrast for the bars and text.
   - **29:** keyboard access and focus, plus accessibility labels.
