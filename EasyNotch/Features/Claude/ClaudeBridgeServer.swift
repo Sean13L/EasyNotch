@@ -177,7 +177,11 @@ nonisolated final class Connection: Identifiable, @unchecked Sendable {
         isClosed = true
         source?.cancel()
         source = nil
-        handlers.closed()
+        let closed = handlers.closed
+        // Drop the handlers (they capture this connection) and the buffer, or it never frees.
+        handlers = Handlers(message: { _ in }, hangup: {}, closed: {})
+        buffer = Data()
+        closed()
     }
 
     private func readAvailable() {
@@ -187,8 +191,9 @@ nonisolated final class Connection: Identifiable, @unchecked Sendable {
         if n < 0 && (errno == EAGAIN || errno == EINTR) { return }
         if n <= 0 {  // 0 = peer hung up, <0 = broken connection
             guard !isClosed else { return }
+            let hangup = handlers.hangup
             closeLocked()
-            handlers.hangup()
+            hangup()
             return
         }
         buffer.append(contentsOf: chunk[..<n])

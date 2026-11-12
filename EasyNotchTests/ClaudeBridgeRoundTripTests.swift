@@ -14,6 +14,11 @@ private nonisolated final class Box<T: Sendable>: @unchecked Sendable {
     }
 }
 
+private nonisolated final class WeakConnection: @unchecked Sendable {
+    weak var ref: Connection?
+    init(_ c: Connection) { ref = c }
+}
+
 /// A short temporary folder: Unix socket paths are limited to 104 bytes.
 private struct TempSocket {
     let folder: URL
@@ -85,7 +90,7 @@ struct ClaudeBridgeRoundTripTests {
         let temp = TempSocket(); defer { temp.cleanUp() }
         let server = ClaudeBridgeServer(socketURL: temp.socket)
         let seen = Box<UUID?>(nil)
-        await confirmation(expectedCount: 1) { hungUp in
+        try await confirmation(expectedCount: 1) { hungUp in
             let fired = Box(false)
             server.onMessage = { _, connection in seen.value = connection.id }
             server.onHangup = { id in
@@ -93,7 +98,7 @@ struct ClaudeBridgeRoundTripTests {
                 fired.value = true
                 hungUp()
             }
-            try? server.start()
+            try server.start()
             #expect(ClaudeBridgeClient.send(request, to: temp.socket))
             // Wait up to 2 seconds for the hangup.
             for _ in 0..<40 where !fired.value { try? await Task.sleep(for: .milliseconds(50)) }
@@ -104,18 +109,40 @@ struct ClaudeBridgeRoundTripTests {
     @Test func serverSideCloseDoesNotReportHangup() async throws {
         let temp = TempSocket(); defer { temp.cleanUp() }
         let server = ClaudeBridgeServer(socketURL: temp.socket)
-        await confirmation(expectedCount: 0) { hungUp in
+        try await confirmation(expectedCount: 0) { hungUp in
             server.onMessage = { _, connection in
                 connection.reply(.decision(allow: false))
                 connection.reply(.decision(allow: false))  // second call must be harmless
                 connection.close()
             }
             server.onHangup = { _ in hungUp() }
-            try? server.start()
+            try server.start()
             #expect(ClaudeBridgeClient.ask(request, to: temp.socket) == .decision(allow: false))
             try? await Task.sleep(for: .milliseconds(300))
         }
         server.stop()
+    }
+
+    @Test func connectionsAreFreedAfterReplyAndAfterHangup() async throws {
+        let temp = TempSocket(); defer { temp.cleanUp() }
+        let server = ClaudeBridgeServer(socketURL: temp.socket)
+        let weakRefs = Box<[WeakConnection]>([])
+        let replyNext = Box(true)
+        server.onMessage = { _, connection in
+            weakRefs.value.append(WeakConnection(connection))
+            if replyNext.value { connection.reply(.decision(allow: true)) }
+        }
+        try server.start()
+        defer { server.stop() }
+
+        #expect(ClaudeBridgeClient.ask(request, to: temp.socket) == .decision(allow: true))
+        replyNext.value = false
+        #expect(ClaudeBridgeClient.send(request, to: temp.socket))  // peer hangs up
+        for _ in 0..<40 where weakRefs.value.count < 2 || weakRefs.value.contains(where: { $0.ref != nil }) {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(weakRefs.value.count == 2)
+        #expect(weakRefs.value.allSatisfy { $0.ref == nil })
     }
 
     @Test func oversizedLineClosesConnection() throws {
