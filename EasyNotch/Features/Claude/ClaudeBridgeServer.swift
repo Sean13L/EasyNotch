@@ -1,11 +1,12 @@
 import Darwin
 import Foundation
+import os
 
 /// The app's side of the socket. Runs on its own private serial queue so the main thread is
 /// never blocked. Callbacks (`onMessage`, `onHangup`) run on that queue too.
 ///
 /// Concurrency: `@unchecked Sendable` is safe because all mutable state (`listener`,
-/// `connections`, `isRunning`) is only touched on `queue`. The two callbacks are set before
+/// `connections`, `listenerSuspended`) is only touched on `queue`. The two callbacks are set before
 /// `start()` and not changed afterwards.
 nonisolated final class ClaudeBridgeServer: @unchecked Sendable {
     var onMessage: @Sendable (ClaudeBridgeMessage, Connection) -> Void = { _, _ in }
@@ -16,6 +17,8 @@ nonisolated final class ClaudeBridgeServer: @unchecked Sendable {
     private let queueKey = DispatchSpecificKey<Bool>()
     private var listener: DispatchSourceRead?
     private var connections: [UUID: Connection] = [:]
+    /// True while the listener is paused because the app ran out of file descriptors.
+    private var listenerSuspended = false
 
     init(socketURL: URL) {
         self.socketURL = socketURL
@@ -89,6 +92,11 @@ nonisolated final class ClaudeBridgeServer: @unchecked Sendable {
     private func stopLocked() {
         guard let source = listener else { return }
         listener = nil
+        // A suspended source never runs its cancel handler (which closes the socket).
+        if listenerSuspended {
+            listenerSuspended = false
+            source.resume()
+        }
         source.cancel()
         for connection in connections.values { connection.closeLocked() }
         connections.removeAll()
@@ -99,7 +107,17 @@ nonisolated final class ClaudeBridgeServer: @unchecked Sendable {
     private func acceptPending(on listenFD: Int32) {
         while true {
             let fd = accept(listenFD, nil, nil)
-            if fd < 0 { return }  // EAGAIN: nothing more waiting
+            if fd < 0 {
+                // Out of file descriptors: the waiting client stays queued and the listener
+                // stays readable, so it would fire again at once, forever. Pause it until one
+                // of our connections closes and frees a descriptor.
+                if errno == EMFILE || errno == ENFILE, let listener, !listenerSuspended {
+                    Log.claude.error("Bridge out of file descriptors; pausing new connections")
+                    listenerSuspended = true
+                    listener.suspend()
+                }
+                return  // otherwise EAGAIN: nothing more waiting
+            }
             var on: Int32 = 1
             setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
             _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
@@ -109,18 +127,30 @@ nonisolated final class ClaudeBridgeServer: @unchecked Sendable {
                 message: { [weak self] message in self?.onMessage(message, connection) },
                 hangup: { [weak self] in
                     self?.connections[connection.id] = nil
+                    self?.resumeListenerIfPaused()
                     self?.onHangup(connection.id)
                 },
-                closed: { [weak self] in self?.connections[connection.id] = nil }
+                closed: { [weak self] in
+                    self?.connections[connection.id] = nil
+                    self?.resumeListenerIfPaused()
+                }
             )
             connections[connection.id] = connection
             connection.startReading()
             Log.claude.debug("Bridge connection opened")
         }
     }
+
+    /// A connection closed, so a file descriptor is free again: accept new connections.
+    private func resumeListenerIfPaused() {
+        guard listenerSuspended, let listener else { return }
+        listenerSuspended = false
+        listener.resume()
+    }
 }
 
-/// One client connection. Reads lines until the peer hangs up or the server closes it.
+/// One client connection. Delivers its first line only (one message per connection), then
+/// keeps watching for the peer to hang up until a reply or close ends it.
 ///
 /// Semantics: `onHangup` fires at most once, and only when the *peer* ended the connection.
 /// Once `reply`, `close`, or an oversized/invalid line closes it, no hangup is reported.
@@ -139,7 +169,13 @@ nonisolated final class Connection: Identifiable, @unchecked Sendable {
     private let queue: DispatchQueue
     private var source: DispatchSourceRead?
     private var buffer = Data()
-    private var isClosed = false
+    /// True once the first line has been delivered; anything after it is ignored.
+    private var hasDelivered = false
+    /// The one piece of state read off the queue (by `ClaudeService` on the main actor), so it
+    /// sits behind a lock.
+    private let closedState = OSAllocatedUnfairLock(initialState: false)
+    /// True once the connection is closed by either side. Safe to read from any thread.
+    var isClosed: Bool { closedState.withLock { $0 } }
     var handlers = Handlers(message: { _ in }, hangup: {}, closed: {})
 
     init(fd: Int32, queue: DispatchQueue) {
@@ -174,7 +210,7 @@ nonisolated final class Connection: Identifiable, @unchecked Sendable {
 
     func closeLocked() {
         guard !isClosed else { return }
-        isClosed = true
+        closedState.withLock { $0 = true }
         source?.cancel()
         source = nil
         let closed = handlers.closed
@@ -196,17 +232,22 @@ nonisolated final class Connection: Identifiable, @unchecked Sendable {
             hangup()
             return
         }
+        // One message per connection: after it, keep reading only to notice a hangup.
+        // Delivering a second line would queue a second request under the same id.
+        guard !hasDelivered else { return }
         buffer.append(contentsOf: chunk[..<n])
-        while !isClosed, let newline = buffer.firstIndex(of: 0x0A) {
-            let line = buffer[buffer.startIndex..<newline]
-            buffer.removeSubrange(buffer.startIndex...newline)
-            guard let message = try? ClaudeBridgeMessage.decode(line: Data(line)) else {
+        if let newline = buffer.firstIndex(of: 0x0A) {
+            let line = Data(buffer[buffer.startIndex..<newline])
+            buffer = Data()
+            guard let message = try? ClaudeBridgeMessage.decode(line: line) else {
                 Log.claude.error("Bridge connection sent an invalid line; closing")
                 return closeLocked()
             }
+            hasDelivered = true
             handlers.message(message)
+            return
         }
-        if !isClosed && buffer.count > ClaudeBridgeMessage.maxLineBytes {
+        if buffer.count > ClaudeBridgeMessage.maxLineBytes {
             Log.claude.error("Bridge line too long; closing")
             closeLocked()
         }

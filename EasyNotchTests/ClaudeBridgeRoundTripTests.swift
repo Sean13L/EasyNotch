@@ -145,6 +145,44 @@ struct ClaudeBridgeRoundTripTests {
         #expect(weakRefs.value.allSatisfy { $0.ref == nil })
     }
 
+    @Test func onlyTheFirstLineOfAConnectionIsDelivered() async throws {
+        let temp = TempSocket(); defer { temp.cleanUp() }
+        let server = ClaudeBridgeServer(socketURL: temp.socket)
+        let count = Box(0)
+        server.onMessage = { _, _ in count.value += 1 }
+        try server.start()
+        defer { server.stop() }
+
+        let fd = try #require(rawConnect(temp.socket))
+        defer { close(fd) }
+        let line = try request.encodeLine()
+        var twoLines = line
+        twoLines.append(line)
+        _ = twoLines.withUnsafeBytes { write(fd, $0.baseAddress, $0.count) }
+        try await Task.sleep(for: .milliseconds(200))
+        _ = line.withUnsafeBytes { write(fd, $0.baseAddress, $0.count) }  // and a later one
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(count.value == 1)
+    }
+
+    @Test func stoppingMarksConnectionsClosed() async throws {
+        let temp = TempSocket(); defer { temp.cleanUp() }
+        let server = ClaudeBridgeServer(socketURL: temp.socket)
+        let seen = Box<Connection?>(nil)
+        server.onMessage = { _, connection in seen.value = connection }
+        try server.start()
+
+        let fd = try #require(rawConnect(temp.socket))
+        defer { close(fd) }
+        let line = try request.encodeLine()
+        _ = line.withUnsafeBytes { write(fd, $0.baseAddress, $0.count) }
+        for _ in 0..<40 where seen.value == nil { try await Task.sleep(for: .milliseconds(50)) }
+        let connection = try #require(seen.value)
+        #expect(!connection.isClosed)
+        server.stop()
+        #expect(connection.isClosed)
+    }
+
     @Test func oversizedLineClosesConnection() throws {
         let temp = TempSocket(); defer { temp.cleanUp() }
         let server = ClaudeBridgeServer(socketURL: temp.socket)
