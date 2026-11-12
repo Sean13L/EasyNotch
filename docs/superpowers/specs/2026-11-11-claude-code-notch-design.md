@@ -110,8 +110,8 @@ Checked in the current docs (code.claude.com/docs/en/hooks, /statusline) on 2026
 
 ### 4.1 Wings (notch closed, ≥1 request waiting)
 Left: the `terminal` symbol and the waiting count. Right: the oldest request's summary, cut
-off in the middle if needed. The alert stays until the notch is opened, then clears while
-requests are still waiting. A new request arriving later brings it back.
+off in the middle if needed. The alert stays until the Claude tab is on screen (opening the
+notch on another tab doesn't count), then clears while requests are still waiting. A new request arriving later brings it back.
 
 ### 4.2 Claude tab: request waiting
 ```
@@ -126,8 +126,7 @@ requests are still waiting. A new request arriving later brings it back.
 ```
 - The summary is shown in a monospaced font, up to 3 lines, ending in "…". The full text
   appears in a tooltip and in the accessibility label.
-- **Allow** is the default button (Return), and **Deny** is the cancel button (Escape). Both
-  can be reached with Tab and show the standard focus ring.
+- Answer by clicking Allow or Deny. The notch never takes keyboard focus, so Return and Escape don't answer (this also stops a stray keypress approving anything).
 - After you answer, the next request appears. When the queue is empty, only usage is shown.
 
 ### 4.3 Claude tab: other states
@@ -217,8 +216,8 @@ Swift Testing (`import Testing`), in `EasyNotchTests`:
 
 `docs/QA_CHECKLIST.md` gets a "Claude Code" section: connect, run a real session, allow,
 deny, two sessions queueing, quitting EasyNotch while a request waits (the terminal prompt
-appears), moving the app (Reconnect), disconnecting and checking `settings.json`, keyboard
-only (Return and Escape), and VoiceOver reading the summary.
+appears), moving the app (Reconnect), disconnecting and checking `settings.json`, Return and
+Escape doing nothing, and VoiceOver reading the summary.
 
 ## 8. Docs to update
 `docs/BLUEPRINT.md` (new D15: Claude Code bridge over a Unix socket and bundled helper;

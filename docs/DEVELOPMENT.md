@@ -170,10 +170,22 @@ open build/Build/Products/Debug/EasyNotch.app --args -SampleSystemOnLaunch YES
   tests must not use the long temporary folder: they use `/tmp/en-xxxx/s.sock`.
 - **No answer is always safe.** Hiding the Claude tab, Disconnect, quitting, or a request
   arriving with nothing listening closes the connection with no reply, so Claude Code asks in
-  the terminal. In `.needsReconnect` (the app was moved) no listener runs at all.
+  the terminal. So does having no notch on screen (lid closed with "built-in only", or every
+  notch hidden over full screen: `ScreenManager.hasVisibleNotch`), and a 33rd waiting request
+  (`ClaudeService.maxPending`).
+- **One message per connection.** `Connection` delivers its first line only and then just
+  watches for a hangup. A request whose connection already closed (a fast Disconnect →
+  Connect) is ignored via the thread-safe `Connection.isClosed`.
+- **Out of file descriptors** (`EMFILE`/`ENFILE` from `accept`), the listener is suspended
+  instead of spinning, and resumed when one of our connections closes.
+- **The Claude alert clears only when the Claude tab is on screen** (`ClaudeView` calls
+  `tabAppeared`/`tabDisappeared`), not on any notch open: a Pomodoro alert or a file drag
+  opens the notch on another tab. In `.needsReconnect` (the app was moved) no listener runs at all.
 - **Only the front request is answerable, and only 0.5 s after it became the front**
-  (`ClaudeService.answerGuard`). This stops a stray click or Return from approving a command
-  the user never read. It covers answers, Ctrl-C in Claude, and new arrivals.
+  (`ClaudeService.answerGuard`). When a request is answered or goes away, the next one slides
+  under the pointer; the guard stops a stray click aimed at the old one from approving a
+  command the user never read. It covers answers, Ctrl-C in Claude, and new arrivals. There
+  are no keyboard shortcuts: the notch panel never becomes key (`NotchPanel.canBecomeKey`).
 - **Our entries are recognised by a command containing `easynotch-claude`.** Disconnect
   removes anything matching, even if the path is from another copy of the app.
 - **Backups:** `settings.json.easynotch-backup` is written only the first time (when the file

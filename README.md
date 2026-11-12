@@ -142,6 +142,8 @@ hook and status line and puts your original status line back (if you didn't have
 entries by hand, or restore `settings.json.easynotch-backup` over `settings.json`. Any command
 containing `easynotch-claude` is EasyNotch's.
 
+Disconnect before deleting EasyNotch; otherwise Claude Code keeps a hook pointing at a missing file and your wrapped status line stops showing.
+
 ## Build from source
 
 1. Install [Xcode](https://apps.apple.com/app/xcode/id497799835) (16 or later) and

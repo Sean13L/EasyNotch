@@ -403,6 +403,8 @@ project: use a throwaway folder (for example `mkdir /tmp/demo`). Write down each
 - [ ] Hide the Claude tab (Settings → Modules) while a request waits: the terminal prompt
       appears. New requests go to the terminal while the tab is hidden, and come back to the
       notch when you show it again.
+- [ ] Lid closed with an external display (Displays: built-in only) → terminal prompt appears.
+- [ ] Full-screen terminal with hide-in-full-screen on → terminal prompt.
 - [ ] With EasyNotch not running, Claude works as before and asks in the terminal.
 
 ### Usage
@@ -413,17 +415,22 @@ project: use a throwaway folder (for example `mkdir /tmp/demo`). Write down each
 - [ ] If your plan has no usage figures, nothing breaks and the hint stays.
 
 ### Beside the notch
-- [ ] The wings show a request, and stay up until you open the notch. A new request after that
-      brings them back.
+- [ ] The wings show a request, and stay up until the Claude tab is on screen. A new request
+      after that brings them back.
+- [ ] With a request waiting, let a Pomodoro phase end (the notch opens on Pomodoro) or drag a
+      file to the notch (it opens on Shelf), then close it: the Claude wings are still there.
 - [ ] They win over the charging flash, meeting, and battery wings, but not a Pomodoro alert.
 
 ### Keyboard and VoiceOver
-- [ ] With a request showing: Return allows, Escape denies. Tab reaches both buttons with a
-      visible focus ring.
+- [ ] Return/Escape do nothing; clicking Allow/Deny works; VoiceOver can reach and press both
+      buttons.
 - [ ] VoiceOver reads the command (the summary) for the request, and each bar as "5-hour usage,
       N percent" and "Weekly usage, N percent".
 
 ### Moving the app
+- [ ] Open the downloaded zip's EasyNotch straight from Downloads (not moved): Settings →
+      Claude Code disables **Connect** and says "Move EasyNotch to your Applications folder
+      before connecting Claude Code."
 - [ ] Move EasyNotch to another folder and open it: Settings → Claude Code says "EasyNotch
       moved — reconnect", and the tab says "EasyNotch moved. Reconnect in Settings."
 - [ ] Until you reconnect, Claude asks in the terminal. **Reconnect** fixes it, with no duplicate
