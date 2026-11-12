@@ -43,10 +43,16 @@ there. Hover over it, or click if you prefer, and it opens into a panel.
   - CPU, memory, and network speed with live charts, plus free disk space.
   - Optionally shows big downloads beside the notch.
   - It only measures while you're looking at it.
+- **>_ Claude Code**
+  - Answer Claude Code's permission requests (Allow or Deny) from the notch instead of
+    switching to the terminal. Requests from several sessions queue up.
+  - Shows your 5-hour and weekly usage (Pro, Max, and Ultra plans), when Claude Code reports it.
+  - Optional: turn it on in Settings → Claude Code. See below for exactly what that changes.
 - **✨ Live activities.** The closed notch grows small "wings" when something is happening:
   - cover art with bouncing bars while music plays
   - the time left on a timer
   - a meeting about to start
+  - a Claude Code request waiting
   - the charging flash
   - the low-battery warning
 - **⚙️ Customization**
@@ -99,6 +105,44 @@ EasyNotch doesn't need Accessibility or Screen Recording access.
 
 It has no analytics and no accounts. The only thing it downloads is Spotify's cover art for
 the song you're playing. Battery and system stats need no permission at all.
+
+## Claude Code
+
+This is off until you press **Connect** in Settings → Claude Code. EasyNotch is an unofficial
+companion and isn't affiliated with Anthropic.
+
+**What Connect changes in `~/.claude/settings.json`:**
+- It adds a `PermissionRequest` hook that runs EasyNotch's small helper
+  (`EasyNotch.app/Contents/Helpers/easynotch-claude permission`). The notch then shows the
+  request, and your Allow or Deny goes back to Claude Code.
+- It sets the status line to the same helper (`… statusline`) to read your usage figures. If
+  you already had a status line, it still runs and still shows: EasyNotch wraps it and keeps
+  a copy of the original in `settings.json.easynotch-statusline`.
+- Your other settings and hooks are left alone, but the file is rewritten, so key order and
+  spacing may change.
+- Before the first change it copies your file to `settings.json.easynotch-backup`.
+
+**What stays on your Mac:** the helper talks to EasyNotch through a private file
+(`~/Library/Application Support/EasyNotch/claude.sock`) that only your user can open. It opens no
+network port and sends nothing anywhere. It passes the tool name, a short summary of what it
+wants to do, and the project folder name to the notch. From the status line it also passes your
+5-hour and weekly usage percentages and reset times. All of it stays on your Mac, and EasyNotch
+stores none of it.
+
+**Good to know:**
+- If EasyNotch isn't running, is quitting, or you hide the Claude tab, Claude Code asks in
+  the terminal as usual. Pressing Ctrl-C in Claude removes the request from the notch.
+- Your own deny rules in Claude Code still win over **Allow**, per Claude Code's hook docs.
+- A request can only be answered from the notch half a second after it becomes the front one.
+- If you move EasyNotch to another folder, press **Reconnect**. Until then, Claude Code asks
+  in the terminal.
+
+**To undo it:** press **Disconnect** in Settings → Claude Code. It removes only EasyNotch's
+hook and status line and puts your original status line back (if you didn't have one, EasyNotch's is simply removed). You can also delete those
+entries by hand, or restore `settings.json.easynotch-backup` over `settings.json`. Any command
+containing `easynotch-claude` is EasyNotch's.
+
+Disconnect before deleting EasyNotch; otherwise Claude Code keeps a hook pointing at a missing file and your wrapped status line stops showing.
 
 ## Build from source
 

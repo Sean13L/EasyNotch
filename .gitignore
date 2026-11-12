@@ -14,3 +14,6 @@ xcuserdata/
 
 # Release zips (built by the release steps, attached to GitHub Releases)
 dist/
+
+# graphify knowledge graph output
+graphify-out/

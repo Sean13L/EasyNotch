@@ -12,15 +12,17 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let nowPlaying: NowPlayingService
     private let spatialAudio: SpatialAudioController
     private let calendar: CalendarService
+    private let claude: ClaudeService
     private var window: NSWindow?
     private var selectedPane: SettingsPane = .general
     private var sizePreview: SizePreview = .expanded
 
-    init(settings: AppSettings, nowPlaying: NowPlayingService, spatialAudio: SpatialAudioController, calendar: CalendarService) {
+    init(settings: AppSettings, nowPlaying: NowPlayingService, spatialAudio: SpatialAudioController, calendar: CalendarService, claude: ClaudeService) {
         self.settings = settings
         self.nowPlaying = nowPlaying
         self.spatialAudio = spatialAudio
         self.calendar = calendar
+        self.claude = claude
     }
 
     func show() {
@@ -56,6 +58,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             nowPlaying: nowPlaying,
             spatialAudio: spatialAudio,
             calendar: calendar,
+            claude: claude,
             onPaneChange: { [weak self] pane in
                 self?.selectedPane = pane
                 self?.updatePreview()

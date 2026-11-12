@@ -6,6 +6,7 @@ enum NotchModule: String, CaseIterable, Identifiable, Codable {
     case calendar
     case battery
     case system
+    case claude
 
     var id: String { rawValue }
 
@@ -17,6 +18,7 @@ enum NotchModule: String, CaseIterable, Identifiable, Codable {
         case .calendar: "Calendar"
         case .battery: "Battery"
         case .system: "System"
+        case .claude: "Claude"
         }
     }
 
@@ -29,6 +31,7 @@ enum NotchModule: String, CaseIterable, Identifiable, Codable {
         case .calendar: "calendar"
         case .battery: "battery.75percent"
         case .system: "gauge.with.dots.needle.33percent"
+        case .claude: "terminal"
         }
     }
 

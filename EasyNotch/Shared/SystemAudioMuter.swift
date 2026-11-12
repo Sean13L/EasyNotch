@@ -50,7 +50,7 @@ final class SystemAudioMuter {
             )
             // The tap only takes effect while the device runs. We don't need its audio.
             try Self.check(
-                AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, nil) { _, _, _, _, _ in },
+                AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, nil, Self.makeSilentIOBlock()),
                 "create the audio callback"
             )
             try Self.check(AudioDeviceStart(aggregateID, ioProcID), "start the mute")
@@ -78,6 +78,13 @@ final class SystemAudioMuter {
     }
 
     // MARK: - Core Audio helpers
+
+    /// Core Audio calls this block on its own audio thread, not the main thread. It must be
+    /// created outside the MainActor, or Swift traps when Core Audio runs it (the crash that
+    /// quit the app when a focus session ended).
+    private nonisolated static func makeSilentIOBlock() -> AudioDeviceIOBlock {
+        { _, _, _, _, _ in }
+    }
 
     private static func check(_ status: OSStatus, _ step: String) throws {
         guard status == noErr else { throw Failure.step(step, status) }

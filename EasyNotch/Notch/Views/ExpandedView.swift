@@ -50,6 +50,7 @@ struct ExpandedView: View {
                 case .calendar: CalendarView()
                 case .battery: BatteryView()
                 case .system: SystemView()
+                case .claude: ClaudeView(onShowSettings: viewModel.showSettings)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

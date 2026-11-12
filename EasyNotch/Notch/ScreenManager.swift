@@ -10,6 +10,14 @@ final class ScreenManager {
     var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
     /// Called when any notch opens.
     var onNotchOpened: (() -> Void)?
+    /// Called when any notch closes.
+    var onNotchClosed: (() -> Void)?
+    /// Called when `hasVisibleNotch` changes.
+    var onVisibilityChange: ((Bool) -> Void)?
+    /// True while at least one notch window is on screen. It's false when no chosen display is
+    /// connected (say, the lid is closed and only the built-in display is chosen) or every
+    /// notch is hidden over a full-screen app.
+    private(set) var hasVisibleNotch = false
 
     private let settings: AppSettings
     private let mouseTracker: MouseTracker
@@ -103,6 +111,11 @@ final class ScreenManager {
         }
     }
 
+    /// Opens every notch on the Pomodoro tab, to get the user's attention.
+    func showAttention() {
+        controllers.values.forEach { $0.viewModel.showAttention() }
+    }
+
     private func syncScreens() {
         let chosen = chosenScreens()
         for (id, metrics) in chosen {
@@ -114,6 +127,7 @@ final class ScreenManager {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
                 controller.viewModel.liveActivityProvider = liveActivityProvider
                 controller.viewModel.onOpen = { [weak self] in self?.onNotchOpened?() }
+                controller.viewModel.onClose = { [weak self] in self?.onNotchClosed?() }
                 controller.viewModel.setPreview(preview)
                 controllers[id] = controller
             }
@@ -132,6 +146,7 @@ final class ScreenManager {
         for (id, controller) in controllers {
             controller.setHiddenForFullScreen(hide && FullScreenDetector.isFullScreen(displayID: id))
         }
+        updateVisibility()
         // Space-switch animations take a moment; check again once they've finished.
         guard hide else { return }
         Task { @MainActor [weak self] in
@@ -140,7 +155,17 @@ final class ScreenManager {
             for (id, controller) in controllers {
                 controller.setHiddenForFullScreen(FullScreenDetector.isFullScreen(displayID: id))
             }
+            updateVisibility()
         }
+    }
+
+    /// Recomputes `hasVisibleNotch` and reports a change.
+    private func updateVisibility() {
+        let visible = controllers.values.contains { $0.isVisible }
+        guard visible != hasVisibleNotch else { return }
+        hasVisibleNotch = visible
+        Log.notch.notice("\(visible ? "A notch is visible" : "No notch is visible", privacy: .public)")
+        onVisibilityChange?(visible)
     }
 
     /// Rebuilds the notch windows when the display options change.

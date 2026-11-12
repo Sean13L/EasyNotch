@@ -25,6 +25,9 @@ xcodebuild -project EasyNotch.xcodeproj -scheme EasyNotch -configuration Release
 # Sign with the release certificate, so the app carries no personal details. Hardened
 # Runtime stays on, and only the app's own entitlements are included (no debugging ones).
 echo "▸ Signing with \"$IDENTITY\""
+# Code inside an app is signed before the app itself.
+codesign --force --options runtime --timestamp=none \
+    --sign "$IDENTITY" "$APP/Contents/Helpers/easynotch-claude"
 codesign --force --options runtime --timestamp=none \
     --entitlements EasyNotch/Resources/EasyNotch.entitlements \
     --sign "$IDENTITY" "$APP"

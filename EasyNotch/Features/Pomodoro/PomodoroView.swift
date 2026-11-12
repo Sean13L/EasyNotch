@@ -53,6 +53,9 @@ struct PomodoroView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 36)
+            .overlay {
+                if pomodoro.finishedPhase != nil { AttentionFlash() }
+            }
         }
     }
 

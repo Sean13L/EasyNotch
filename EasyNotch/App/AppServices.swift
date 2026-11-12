@@ -11,6 +11,7 @@ final class AppServices {
     let calendar: CalendarService
     let battery: BatteryService
     let system: SystemMonitor
+    let claude: ClaudeService
     private let mouseTracker = MouseTracker()
     private let hotKey = HotKeyCenter()
     private let screenManager: ScreenManager
@@ -28,16 +29,18 @@ final class AppServices {
         calendar = CalendarService(settings: settings)
         battery = BatteryService(settings: settings)
         system = SystemMonitor(settings: settings)
+        claude = ClaudeService(settings: settings)
         screenManager = ScreenManager(
             settings: settings,
             mouseTracker: mouseTracker,
             features: NotchFeatures(
                 pomodoro: pomodoro, nowPlaying: nowPlaying, shelf: shelf,
-                calendar: calendar, battery: battery, system: system
+                calendar: calendar, battery: battery, system: system, claude: claude
             )
         )
         settingsWindow = SettingsWindowController(
-            settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio, calendar: calendar
+            settings: settings, nowPlaying: nowPlaying, spatialAudio: spatialAudio, calendar: calendar,
+            claude: claude
         )
 
         // Wire the pieces together now that they all exist.
@@ -47,14 +50,28 @@ final class AppServices {
         }
         hotKey.onPress = { [weak self] in self?.screenManager.toggleFromShortcut() }
         // Opening the notch counts as seeing its alerts (a meeting about to start, low battery).
-        screenManager.onNotchOpened = { [calendar, battery, pomodoro] in
+        // Claude's alert is different: it clears only when its tab is actually on screen
+        // (`ClaudeView` tells the service), since the notch may open on another tab.
+        screenManager.onNotchOpened = { [calendar, battery] in
             calendar.acknowledgeAlerts()
             battery.acknowledgeAlerts()
+        }
+        // A Claude request needs a notch to be seen in; with none on screen it goes back to
+        // the terminal. Closures keep the Claude feature from knowing about notch windows.
+        claude.isNotchVisible = { [screenManager] in screenManager.hasVisibleNotch }
+        screenManager.onVisibilityChange = { [claude] visible in
+            claude.notchVisibilityChanged(visible)
+        }
+        // The Pomodoro alert stays until the notch closes, so an auto-opened notch keeps flashing.
+        screenManager.onNotchClosed = { [pomodoro] in
             pomodoro.acknowledgeAlert()
+        }
+        pomodoro.onPhaseEnded = { [weak self, settings] in
+            if settings.pomodoroNotifications { self?.screenManager.showAttention() }
         }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.
-        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system] preferred in
+        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system, claude] preferred in
             let visible = NotchModule.visible(order: settings.moduleOrder, hidden: settings.hiddenModules)
             let showTimer = settings.pomodoroInNotch && visible.contains(.pomodoro) && pomodoro.engine.isActive
             let showMusic = settings.musicInNotch && visible.contains(.music)
@@ -69,7 +86,8 @@ final class AppServices {
                 musicRecentlyPaused: showMusic && nowPlaying.showsPausedTrack,
                 lowBattery: showBattery && battery.showsLowWarning,
                 bigTransfer: visible.contains(.system) && system.isTransferring,
-                timerPaused: showTimer && !pomodoro.engine.isRunning
+                timerPaused: showTimer && !pomodoro.engine.isRunning,
+                claudeWaiting: visible.contains(.claude) && claude.showsAlert
             ), preferring: preferred)
         }
     }
@@ -81,6 +99,7 @@ final class AppServices {
         calendar.activate()
         battery.activate()
         system.activate()
+        claude.activate()
         screenManager.start()
         watchShortcut()
         #if DEBUG

@@ -14,6 +14,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case calendar
     case battery
     case system
+    case claude
 
     var id: Self { self }
 
@@ -31,6 +32,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .calendar: "Calendar"
         case .battery: "Battery"
         case .system: "System"
+        case .claude: "Claude Code"
         }
     }
 
@@ -48,6 +50,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .calendar: "calendar"
         case .battery: "battery.75percent"
         case .system: "gauge.with.dots.needle.33percent"
+        case .claude: "terminal"
         }
     }
 }
@@ -58,6 +61,7 @@ struct SettingsView: View {
     let nowPlaying: NowPlayingService
     let spatialAudio: SpatialAudioController
     let calendar: CalendarService
+    let claude: ClaudeService
     /// Reports the selected pane, so the window controller can start or stop the notch preview.
     let onPaneChange: (SettingsPane) -> Void
     /// Reports which notch shape the Size pane wants to preview.
@@ -94,6 +98,7 @@ struct SettingsView: View {
             case .battery: BatteryPane(settings: settings)
             case .system: SystemPane(settings: settings)
             case .pomodoro: PomodoroPane(settings: settings)
+            case .claude: ClaudePane(claude: claude)
             }
         }
         .frame(minWidth: 640, minHeight: 440)

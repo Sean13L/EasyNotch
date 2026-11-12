@@ -9,6 +9,8 @@ enum LiveActivity: Equatable {
     case battery
     /// A big download or upload in progress.
     case network
+    /// Claude Code is waiting for an answer to a permission request.
+    case claudeRequest
     /// Empty wings, shown only while previewing the live activity width in Settings.
     case placeholder
 
@@ -20,6 +22,7 @@ enum LiveActivity: Equatable {
         case .meeting: .calendar
         case .battery: .battery
         case .network: .system
+        case .claudeRequest: .claude
         case .placeholder: nil
         }
     }
@@ -36,11 +39,13 @@ enum LiveActivity: Equatable {
         var lowBattery = false
         var bigTransfer = false
         var timerPaused = false
+        var claudeWaiting = false
     }
 
     /// Picks what to show when several things are going on.
     ///
-    /// Alerts come first: the brief charging flash, then a meeting about to start, then low
+    /// Alerts come first: a finished Pomodoro phase, then a waiting Claude Code request (it is
+    /// blocking a terminal), then the brief charging flash, then a meeting about to start, then low
     /// battery. The meeting and battery alerts stay until the user opens the notch.
     ///
     /// Next, the tab the user last had open (`preferring`) wins if it has something to show, so
@@ -66,6 +71,7 @@ enum LiveActivity: Equatable {
             (candidates.timerPaused, .pomodoro),
         ]
         if candidates.phaseEnded { return .pomodoroAlert }
+        if candidates.claudeWaiting { return .claudeRequest }
         if candidates.chargingFlash { return .battery }
         if candidates.meetingSoon { return .meeting }
         if candidates.lowBattery { return .battery }
