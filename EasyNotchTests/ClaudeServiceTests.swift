@@ -296,8 +296,12 @@ struct ClaudeUsageTextTests {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         #expect(ClaudeUsageView.resetText(now + 2 * 3600 + 10 * 60 + 5, now: now) == "resets in 2h 10m")
         #expect(ClaudeUsageView.resetText(now + 25 * 60, now: now) == "resets in 25m")
-        #expect(ClaudeUsageView.resetText(now + 30 * 3600, now: now).hasPrefix("resets ") == true)
-        #expect(!ClaudeUsageView.resetText(now + 30 * 3600, now: now).contains(" in "))
+        // 1_800_000_000 is Friday 2027-01-15 08:00 UTC; 30 h later is Saturday.
+        let utc = TimeZone(identifier: "UTC")!
+        #expect(ClaudeUsageView.resetText(now + 30 * 3600, now: now, locale: Locale(identifier: "en_US"), timeZone: utc) == "resets Sat")
+        #expect(ClaudeUsageView.percentText(130) == "100")
+        #expect(ClaudeUsageView.percentText(-5) == "0")
+        #expect(ClaudeUsageView.percentText(42.4) == "42")
         #expect(ClaudeUsageView.updatedText(now - 300, now: now) == "Updated 5 min ago")
         #expect(ClaudeUsageView.updatedText(now - 10, now: now) == "Updated just now")
     }

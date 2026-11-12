@@ -34,11 +34,11 @@ struct ClaudeUsageView: View {
             Text(label)
                 .font(.system(size: 11, weight: .semibold))
                 .frame(width: 34, alignment: .leading)
-            ProgressView(value: min(max(window.usedPercentage, 0), 100), total: 100)
+            ProgressView(value: Self.clampedPercent(window.usedPercentage), total: 100)
                 .tint(accent)
                 .accessibilityLabel("\(label) usage")
-                .accessibilityValue("\(Int(window.usedPercentage.rounded())) percent")
-            Text("\(Int(window.usedPercentage.rounded()))%")
+                .accessibilityValue("\(Self.percentText(window.usedPercentage)) percent")
+            Text(Self.percentText(window.usedPercentage) + "%")
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
                 .frame(width: 34, alignment: .trailing)
             Text(Self.resetText(window.resetsAt, now: now))
@@ -48,12 +48,17 @@ struct ClaudeUsageView: View {
         }
     }
 
-    /// "resets in 2h 10m", or the weekday ("resets Friday") when it is more than a day away.
-    static func resetText(_ date: Date, now: Date) -> String {
+    static func clampedPercent(_ value: Double) -> Double { min(max(value, 0), 100) }
+
+    /// The whole-number percentage, clamped to 0...100 ("100" for 130).
+    static func percentText(_ value: Double) -> String { String(Int(clampedPercent(value).rounded())) }
+
+    /// "resets in 2h 10m", or the weekday ("resets Thu") when it is more than a day away.
+    static func resetText(_ date: Date, now: Date, locale: Locale = .current, timeZone: TimeZone = .current) -> String {
         let seconds = date.timeIntervalSince(now)
         if seconds <= 0 { return "resetting" }
         if seconds > 24 * 3600 {
-            return "resets " + date.formatted(.dateTime.weekday(.wide))
+            return "resets " + date.formatted(Date.FormatStyle(locale: locale, timeZone: timeZone).weekday(.abbreviated))
         }
         let minutes = Int(seconds / 60)
         let hours = minutes / 60

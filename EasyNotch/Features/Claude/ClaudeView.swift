@@ -11,9 +11,9 @@ struct ClaudeView: View {
         VStack(alignment: .leading, spacing: 10) {
             switch claude.setupStatus {
             case .disconnected:
-                notice("Claude Code isn't connected.", button: "Open Settings")
+                notice("Connect Claude Code to answer permission requests from the notch.", button: "Open Settings")
             case .needsReconnect:
-                notice("Claude Code's settings changed. Reconnect in Settings.", button: "Open Settings")
+                notice("EasyNotch moved. Reconnect in Settings.", button: "Open Settings")
             case .connected:
                 if let request = claude.pending.first {
                     RequestPanel(request: request, count: claude.pending.count, claude: claude)
@@ -26,7 +26,7 @@ struct ClaudeView: View {
                 if let usage = claude.usage {
                     ClaudeUsageView(usage: usage)
                 } else {
-                    Text("Usage appears after your next Claude Code message.")
+                    Text("Usage appears after your next Claude message (Pro, Max, and Ultra plans).")
                         .font(.system(size: 11))
                         .foregroundStyle(ClaudeUsageView.secondary)
                 }
@@ -79,7 +79,7 @@ private struct RequestPanel: View {
                 TimelineView(.periodic(from: .now, by: 0.25)) { _ in
                     let ok = claude.canAnswer(request.id)
                     buttons(enabled: ok)
-                        .onChange(of: ok) { _, now in if now { ready = true } }
+                        .onChange(of: ok, initial: true) { _, now in if now { ready = true } }
                 }
             }
         }
