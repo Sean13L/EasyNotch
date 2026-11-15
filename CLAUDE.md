@@ -12,7 +12,10 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.3.0: published** at github.com/Sean13L/EasyNotch (2026-11-15), marked Latest.
+- **v1.3.1: published** at github.com/Sean13L/EasyNotch (2026-11-15), marked Latest.
+  - A reply from the Done pill reaches Claude as Stop-hook `additionalContext`, so the
+    transcript shows hook feedback instead of "Stop hook blocking error".
+- **v1.3.0: published** at github.com/Sean13L/EasyNotch (2026-11-15).
   - **Claude Code in the notch:** Connect (Settings → Claude Code) adds a permission hook and
     status line to `~/.claude/settings.json`. Requests show in a pill left of the notch
     (`ClaudePill`); hovering it opens an answer card with Allow, Deny, and a note to Claude.

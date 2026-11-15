@@ -56,10 +56,14 @@ nonisolated enum ClaudeHookTranslator {
 
     /// The JSON that makes Claude keep going with `reply` as its next instruction.
     /// Nil for an empty reply, so the session stops normally.
+    /// `additionalContext` instead of `decision: "block"`: both keep Claude going, but "block"
+    /// shows in the transcript as "Stop hook blocking error".
     static func stopOutput(reply: String?) -> Data? {
         let text = reply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !text.isEmpty else { return nil }
-        let root: [String: Any] = ["decision": "block", "reason": String(text.prefix(4_000))]
+        let root: [String: Any] = [
+            "hookSpecificOutput": ["hookEventName": "Stop", "additionalContext": String(text.prefix(4_000))]
+        ]
         return try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])
     }
 
