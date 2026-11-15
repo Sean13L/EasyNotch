@@ -71,7 +71,11 @@ final class AppServices {
         }
 
         // What appears beside the closed notch. A tab that's turned off shows nothing.
-        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system, claude] preferred in
+        // A waiting Claude Code request shows in its own pill beside whatever the notch shows.
+        screenManager.claudeAlertProvider = { [settings, claude] in
+            !settings.hiddenModules.contains(NotchModule.claude.rawValue) && claude.showsAlert
+        }
+        screenManager.liveActivityProvider = { [settings, pomodoro, nowPlaying, calendar, battery, system] preferred in
             let visible = NotchModule.visible(order: settings.moduleOrder, hidden: settings.hiddenModules)
             let showTimer = settings.pomodoroInNotch && visible.contains(.pomodoro) && pomodoro.engine.isActive
             let showMusic = settings.musicInNotch && visible.contains(.music)
@@ -86,8 +90,7 @@ final class AppServices {
                 musicRecentlyPaused: showMusic && nowPlaying.showsPausedTrack,
                 lowBattery: showBattery && battery.showsLowWarning,
                 bigTransfer: visible.contains(.system) && system.isTransferring,
-                timerPaused: showTimer && !pomodoro.engine.isRunning,
-                claudeWaiting: visible.contains(.claude) && claude.showsAlert
+                timerPaused: showTimer && !pomodoro.engine.isRunning
             ), preferring: preferred)
         }
     }

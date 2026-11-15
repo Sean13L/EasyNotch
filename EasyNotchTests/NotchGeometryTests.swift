@@ -25,6 +25,26 @@ struct NotchGeometryTests {
         #expect(g.notchRect == CGRect(x: 663.5, y: 950, width: 185, height: 32))
     }
 
+    @Test func claudePillSitsLeftOfTheNotchOrWings() throws {
+        let g = try #require(Self.geometry())
+        #expect(g.claudePill(beside: g.notchRect) == CGRect(x: 561.5, y: 950, width: 96, height: 32))
+        let besideWings = g.claudePill(beside: g.compactRect)
+        #expect(besideWings.maxX == g.compactRect.minX - NotchGeometry.pillGap)
+        #expect(g.panelFrame.contains(besideWings))
+    }
+
+    @Test func claudeCardHangsUnderThePillInsideThePanel() throws {
+        let g = try #require(Self.geometry())
+        let pill = g.claudePill(beside: g.compactRect)
+        let card = g.claudeCard(under: pill)
+        #expect(card == CGRect(x: pill.minX, y: 840, width: 380, height: 142))
+        #expect(card.contains(pill))
+        #expect(g.panelFrame.contains(card))
+        // Never larger than the open panel.
+        let small = try #require(Self.geometry(open: CGSize(width: 300, height: 100)))
+        #expect(small.claudeCard(under: small.claudePill(beside: small.notchRect)).size == CGSize(width: 300, height: 100))
+    }
+
     @Test func openRectIsCenteredUnderNotchAndTouchesTop() throws {
         let g = try #require(Self.geometry())
         #expect(g.openRect == CGRect(x: 436, y: 782, width: 640, height: 200))

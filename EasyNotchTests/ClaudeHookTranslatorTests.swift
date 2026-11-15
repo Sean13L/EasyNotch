@@ -71,6 +71,37 @@ struct ClaudeHookTranslatorTests {
         #expect(out.message == "Denied from EasyNotch.")
     }
 
+    @Test func hookOutputDenyCarriesTrimmedNote() throws {
+        let out = try decodeOutput(ClaudeHookTranslator.hookOutput(allow: false, note: "  use git mv instead\n"))
+        #expect(out.behavior == "deny")
+        #expect(out.message == "use git mv instead")
+        let blank = try decodeOutput(ClaudeHookTranslator.hookOutput(allow: false, note: "   "))
+        #expect(blank.message == "Denied from EasyNotch.")
+    }
+
+    @Test func finishedKeepsTheEndOfTheMessageAndTheProject() throws {
+        let long = String(repeating: "a", count: 700) + " Want me to commit?"
+        let data = try JSONSerialization.data(withJSONObject: [
+            "last_assistant_message": long, "cwd": "/Users/a/EasyNotch", "transcript_path": "/secret",
+        ])
+        guard case .finished(let message, let project)? = ClaudeHookTranslator.finished(fromHookInput: data) else {
+            Issue.record("not a finished message"); return
+        }
+        #expect(message.hasPrefix("…") && message.hasSuffix("Want me to commit?"))
+        #expect(message.count == 601)
+        #expect(project == "EasyNotch")
+        #expect(ClaudeHookTranslator.finished(fromHookInput: input(#"{"last_assistant_message":"  "}"#)) == nil)
+    }
+
+    @Test func stopOutputBlocksWithTheReplyOnlyWhenThereIsOne() throws {
+        let data = try #require(ClaudeHookTranslator.stopOutput(reply: "  run the tests\n"))
+        let root = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(root["decision"] as? String == "block")
+        #expect(root["reason"] as? String == "run the tests")
+        #expect(ClaudeHookTranslator.stopOutput(reply: "   ") == nil)
+        #expect(ClaudeHookTranslator.stopOutput(reply: nil) == nil)
+    }
+
     @Test func usageReadsBothWindows() throws {
         let data = input(#"{"rate_limits":{"five_hour":{"used_percentage":42,"resets_at":1700000000}}}"#)
         let message = try #require(ClaudeHookTranslator.usage(fromStatusLine: data))

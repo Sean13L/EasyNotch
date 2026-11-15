@@ -110,6 +110,26 @@ struct ClaudeSetupTests {
         #expect((restored["statusLine"] as? [String: Any])?["command"] as? String == "my-line")
     }
 
+    @Test func stopHookIsAddedKeptOnReconnectAndRemoved() throws {
+        let dir = try makeFolder()
+        let s = setup(dir)
+        try write(#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"say done"}]}]}}"#, to: dir)
+        try s.connect()
+        #expect(!s.repliesOnFinish())
+        try s.connect(replyOnFinish: true)
+        #expect(s.repliesOnFinish())
+        try s.connect()  // a plain Reconnect keeps it
+        let stop = try #require((try read(s.settingsURL)["hooks"] as? [String: Any])?["Stop"] as? [Any])
+        #expect(stop.count == 2)  // the owner's hook and ours, never duplicated
+        try s.connect(replyOnFinish: false)
+        #expect(!s.repliesOnFinish())
+        try s.connect(replyOnFinish: true)
+        try s.disconnect()  // Disconnect removes ours and keeps the owner's
+        let left = try #require((try read(s.settingsURL)["hooks"] as? [String: Any])?["Stop"] as? [Any])
+        #expect(left.count == 1)
+        #expect(!s.repliesOnFinish())
+    }
+
     @Test func connectThenDisconnectRestoresOriginal() throws {
         let originals = [
             "{}",

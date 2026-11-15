@@ -103,6 +103,50 @@ private struct Rig {
         }
     }
 
+    @Test func denyWithNoteSendsIt() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let connection = FakeConnection()
+            rig.service.receive(request("a"), from: connection)
+            rig.wait(1)
+            rig.service.deny(connection.id, note: "not that file")
+            #expect(connection.replies == [.decision(allow: false, note: "not that file")])
+        }
+    }
+
+    @Test func finishedSessionTakesAReplyOrIsLetGo() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let first = FakeConnection()
+            rig.service.receive(.finished(message: "All done.", project: "demo"), from: first)
+            #expect(rig.service.finished?.message == "All done.")
+            #expect(rig.service.showsAlert)
+            // A newer finished session replaces the older one, which is let go.
+            let second = FakeConnection()
+            rig.service.receive(.finished(message: "Next.", project: "demo"), from: second)
+            #expect(first.closeCount == 1)
+            rig.service.sendReply("run the tests")
+            #expect(second.replies == [.reply(text: "run the tests")])
+            #expect(rig.service.finished == nil && !rig.service.showsAlert)
+            // Done lets it stop without a reply.
+            let third = FakeConnection()
+            rig.service.receive(.finished(message: "x", project: "demo"), from: third)
+            rig.service.dismissFinished()
+            #expect(third.replies.isEmpty && third.closeCount == 1)
+            #expect(rig.service.finished == nil)
+        }
+    }
+
+    @Test func finishedSessionClearsWhenItHangsUp() throws {
+        try withIsolatedDefaults { defaults in
+            let rig = try Rig(defaults); defer { rig.cleanup() }
+            let connection = FakeConnection()
+            rig.service.receive(.finished(message: "x", project: "demo"), from: connection)
+            rig.service.connectionClosed(connection.id)
+            #expect(rig.service.finished == nil)
+        }
+    }
+
     @Test func answeringAnUnknownIdDoesNothing() throws {
         try withIsolatedDefaults { defaults in
             let rig = try Rig(defaults); defer { rig.cleanup() }

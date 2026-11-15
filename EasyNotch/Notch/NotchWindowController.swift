@@ -48,7 +48,11 @@ final class NotchWindowController {
         panel.contentView = hostingView
 
         viewModel.onStateChange = { [weak self] state in
-            self?.panel.ignoresMouseEvents = (state == .closed)
+            guard let panel = self?.panel else { return }
+            panel.ignoresMouseEvents = (state == .closed)
+            panel.acceptsKeyboard = (state == .open)
+            // Give typing back to the app you were using once the notch closes.
+            if state == .closed, panel.isKeyWindow { panel.resignKey() }
         }
         panel.orderFrontRegardless()
         observeSizeSettings()

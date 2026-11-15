@@ -22,10 +22,15 @@ final class NotchPanel: NSPanel {
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
         ignoresMouseEvents = true  // while closed, clicks fall through to the menu bar
+        // Only a click in a text field (the Claude deny note) takes keyboard focus; clicking
+        // buttons, music, or the shelf leaves it with the app you're using.
+        becomesKeyOnlyIfNeeded = true
     }
 
-    // Keyboard focus stays with whatever app you're using.
-    override var canBecomeKey: Bool { false }
+    /// Set while the notch is open, so its text fields can be typed in.
+    var acceptsKeyboard = false
+
+    override var canBecomeKey: Bool { acceptsKeyboard }
     override var canBecomeMain: Bool { false }
 }
 

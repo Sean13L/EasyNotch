@@ -10,31 +10,48 @@ struct NotchRootView: View {
         let geometry = viewModel.geometry
         let presentation = viewModel.presentation
         let animation = viewModel.animationStyle
-        let style = NotchShapeLayout(presentation, geometry: geometry)
+        let style = NotchShapeLayout(presentation, geometry: geometry, cardRect: viewModel.cardRect)
         let rect = geometry.localRect(style.rect)
+        let isExpanded = presentation == .open || presentation == .card
 
-        ZStack(alignment: .top) {
-            NotchShape(topRadius: style.ear, bottomRadius: style.corner)
-                .fill(.black)
-                .frame(width: rect.width + style.ear * 2, height: rect.height)
-                .shadow(color: .black.opacity(presentation == .open ? 0.45 : 0), radius: 12, y: 6)
-
-            switch presentation {
-            case .open:
-                ExpandedView(viewModel: viewModel)
-                    .frame(width: rect.width, height: rect.height)
-                    .transition(contentTransition)
-            case let .compact(activity):
-                CompactView(activity: activity, notchWidth: geometry.notchRect.width)
-                    .frame(width: rect.width, height: rect.height)
-                    .transition(contentTransition)
-            case .closed:
-                EmptyView()
+        ZStack(alignment: .topLeading) {
+            // Drawn first, so it slides out from under the notch.
+            if let pill = viewModel.claudePillRect {
+                let local = geometry.localRect(pill)
+                ClaudePill()
+                    .frame(width: local.width, height: local.height)
+                    .position(x: local.midX, y: local.midY)
+                    .transition(.offset(x: geometry.notchRect.minX - pill.minX).combined(with: .opacity))
             }
+
+            ZStack(alignment: .top) {
+                NotchShape(topRadius: style.ear, bottomRadius: style.corner)
+                    .fill(.black)
+                    .frame(width: rect.width + style.ear * 2, height: rect.height)
+                    .shadow(color: .black.opacity(isExpanded ? 0.45 : 0), radius: 12, y: 6)
+
+                switch presentation {
+                case .open:
+                    ExpandedView(viewModel: viewModel)
+                        .frame(width: rect.width, height: rect.height)
+                        .transition(contentTransition)
+                case .card:
+                    ClaudeCardView(topInset: geometry.notchRect.height, onDone: viewModel.close)
+                        .frame(width: rect.width, height: rect.height)
+                        .transition(contentTransition)
+                case let .compact(activity):
+                    CompactView(activity: activity, notchWidth: geometry.notchRect.width)
+                        .frame(width: rect.width, height: rect.height)
+                        .transition(contentTransition)
+                case .closed:
+                    EmptyView()
+                }
+            }
+            .position(x: rect.midX, y: rect.midY)
         }
-        .position(x: rect.midX, y: rect.midY)
         .frame(width: geometry.panelFrame.width, height: geometry.panelFrame.height)
-        .animation(presentation == .open ? animation.opening : animation.closing, value: presentation)
+        .animation(isExpanded ? animation.opening : animation.closing, value: presentation)
+        .animation(.spring(response: 0.45, dampingFraction: 0.75), value: viewModel.claudePillRect)
         .environment(\.colorScheme, .dark)
         .environment(\.notchAccent, NotchAccent.color(named: viewModel.accentName))
         .environment(\.hasCustomNotchAccent, viewModel.accentName != "system")
@@ -54,7 +71,7 @@ private struct NotchShapeLayout {
     let ear: CGFloat
     let corner: CGFloat
 
-    init(_ presentation: NotchPresentation, geometry: NotchGeometry) {
+    init(_ presentation: NotchPresentation, geometry: NotchGeometry, cardRect: CGRect) {
         switch presentation {
         case .closed:
             // No ears, and bottom corners rounder than the hardware notch's, so the shape stays
@@ -65,6 +82,8 @@ private struct NotchShapeLayout {
             (rect, ear, corner) = (geometry.compactRect, min(6, wing), 12)
         case .open:
             (rect, ear, corner) = (geometry.openRect, 10, 24)
+        case .card:
+            (rect, ear, corner) = (cardRect, 10, 20)
         }
     }
 }

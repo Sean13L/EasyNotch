@@ -8,6 +8,8 @@ final class ScreenManager {
     var onShowSettings: (() -> Void)?
     /// Decides what shows beside the closed notch; passed on to every screen's notch.
     var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
+    /// Whether a Claude Code request is waiting to be seen; passed on to every screen's notch.
+    var claudeAlertProvider: () -> Bool = { false }
     /// Called when any notch opens.
     var onNotchOpened: (() -> Void)?
     /// Called when any notch closes.
@@ -126,6 +128,7 @@ final class ScreenManager {
             ) {
                 controller.viewModel.onShowSettings = { [weak self] in self?.onShowSettings?() }
                 controller.viewModel.liveActivityProvider = liveActivityProvider
+                controller.viewModel.claudeAlertProvider = claudeAlertProvider
                 controller.viewModel.onOpen = { [weak self] in self?.onNotchOpened?() }
                 controller.viewModel.onClose = { [weak self] in self?.onNotchClosed?() }
                 controller.viewModel.setPreview(preview)

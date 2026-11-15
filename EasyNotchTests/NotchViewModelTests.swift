@@ -26,6 +26,31 @@ struct NotchViewModelTests {
         return NotchViewModel(geometry: geometry, settings: settings)
     }
 
+    @Test func claudePillSitsBesideTheWingsWithoutReplacingThem() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.liveActivityProvider = { _ in .music }
+            vm.claudeAlertProvider = { true }
+            #expect(vm.presentation == .compact(.music))  // music keeps its wings
+            #expect(vm.claudePillRect == vm.geometry.claudePill(beside: vm.geometry.compactRect))
+        }
+    }
+
+    @Test func hoveringTheClaudePillOpensTheCard() {
+        withIsolatedDefaults { defaults in
+            let vm = makeViewModel(defaults)
+            vm.claudeAlertProvider = { true }
+            let pill = vm.claudePillRect!
+            vm.pointerMoved(to: CGPoint(x: pill.midX, y: pill.midY))
+            #expect(vm.presentation == .card)
+            #expect(vm.claudePillRect == nil)  // the card replaces the pill while open
+            vm.pointerMoved(to: insideOpenPanel)  // outside the small card, so it closes
+            #expect(vm.state == .closed)
+            vm.pointerMoved(to: notchCenter)  // hovering the notch itself opens the full panel
+            #expect(vm.presentation == .open)
+        }
+    }
+
     @Test func startsClosed() {
         withIsolatedDefaults { defaults in
             #expect(makeViewModel(defaults).state == .closed)

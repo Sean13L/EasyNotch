@@ -29,6 +29,11 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
     /// How far around the notch a file drag opens it. Generous, because you aim less
     /// precisely while dragging.
     static let dragMargin: CGFloat = 40
+    /// The Claude answer card's width, and its height below the notch.
+    static let cardSize = CGSize(width: 380, height: 110)
+    /// The Claude pill's width, and the gap between it and the notch.
+    static let pillWidth: CGFloat = 96
+    static let pillGap: CGFloat = 6
 
     let screenFrame: CGRect
     /// The physical notch (the closed state).
@@ -43,6 +48,8 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
     let dragHotZone: CGRect
     /// The expanded panel (the open state).
     let openRect: CGRect
+    /// The hover margin, kept for the Claude pill's hover area.
+    let hotZoneMargin: CGFloat
     /// The window's frame: room for every state plus the shadow, kept on screen.
     let panelFrame: CGRect
 
@@ -65,6 +72,7 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
         let compact = notchRect.insetBy(dx: -max(0, compactWingWidth), dy: 0)
         compactRect = compact.intersection(screen)
         compactHotZone = compactRect.insetBy(dx: -hotZoneMargin, dy: -hotZoneMargin)
+        self.hotZoneMargin = hotZoneMargin
         dragHotZone = compactRect.insetBy(dx: -Self.dragMargin, dy: -Self.dragMargin)
 
         // Never smaller than the notch, never wider or taller than the screen.
@@ -75,13 +83,38 @@ nonisolated struct NotchGeometry: Equatable, Sendable {
         openRect = CGRect(x: x, y: screen.maxY - height, width: width, height: height)
 
         let padding = Self.shadowPadding
-        let content = openRect.union(compactRect)
+        // The pill and card sit farthest left beside the wings; make room for them there.
+        let pill = Self.pill(beside: compactRect, notch: notchRect, screen: screen)
+        let content = openRect.union(compactRect).union(pill)
+            .union(Self.card(under: pill, notch: notchRect, open: openRect, screen: screen))
         panelFrame = CGRect(
             x: content.minX - padding,
             y: content.minY - padding,
             width: content.width + padding * 2,
             height: content.height + padding
         ).intersection(screen)
+    }
+
+    /// The Claude pill just left of `shape` (the notch, or the notch with its wings).
+    func claudePill(beside shape: CGRect) -> CGRect {
+        Self.pill(beside: shape, notch: notchRect, screen: screenFrame)
+    }
+
+    /// The Claude answer card, dropping down from the top of the screen under `pill`.
+    func claudeCard(under pill: CGRect) -> CGRect {
+        Self.card(under: pill, notch: notchRect, open: openRect, screen: screenFrame)
+    }
+
+    private static func pill(beside shape: CGRect, notch: CGRect, screen: CGRect) -> CGRect {
+        CGRect(x: max(shape.minX - pillGap - pillWidth, screen.minX), y: notch.minY, width: pillWidth, height: notch.height)
+    }
+
+    /// Starts at the pill's left edge and is never bigger than the open panel, so it fits.
+    private static func card(under pill: CGRect, notch: CGRect, open: CGRect, screen: CGRect) -> CGRect {
+        let width = min(cardSize.width, open.width)
+        let height = min(notch.height + cardSize.height, open.height)
+        let x = min(max(pill.minX, screen.minX), screen.maxX - width)
+        return CGRect(x: x, y: screen.maxY - height, width: width, height: height)
     }
 
     /// Converts a global rect into the panel's SwiftUI space
