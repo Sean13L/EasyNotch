@@ -93,11 +93,13 @@ struct ClaudeHookTranslatorTests {
         #expect(ClaudeHookTranslator.finished(fromHookInput: input(#"{"last_assistant_message":"  "}"#)) == nil)
     }
 
-    @Test func stopOutputBlocksWithTheReplyOnlyWhenThereIsOne() throws {
+    @Test func stopOutputContinuesWithTheReplyOnlyWhenThereIsOne() throws {
         let data = try #require(ClaudeHookTranslator.stopOutput(reply: "  run the tests\n"))
         let root = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
-        #expect(root["decision"] as? String == "block")
-        #expect(root["reason"] as? String == "run the tests")
+        let out = try #require(root["hookSpecificOutput"] as? [String: Any])
+        #expect(out["hookEventName"] as? String == "Stop")
+        #expect(out["additionalContext"] as? String == "run the tests")
+        #expect(root["decision"] == nil)  // "block" would show as a hook error
         #expect(ClaudeHookTranslator.stopOutput(reply: "   ") == nil)
         #expect(ClaudeHookTranslator.stopOutput(reply: nil) == nil)
     }
