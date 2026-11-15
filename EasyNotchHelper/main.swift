@@ -4,8 +4,8 @@ import Foundation
 // SIGPIPE when we write to it. We always want to exit 0.
 signal(SIGPIPE, SIG_IGN)
 
-// easynotch-claude: run by Claude Code as a PermissionRequest hook ("permission") and as its
-// status line ("statusline [--then <command>]"). It talks to the EasyNotch app over a Unix
+// easynotch-claude: run by Claude Code as a PermissionRequest hook ("permission"), a Stop hook
+// ("stop"), and its status line ("statusline [--then <command>]"). It talks to the EasyNotch app over a Unix
 // socket. Whatever goes wrong (app not running, bad input), it exits 0 with no output, so
 // Claude Code falls back to its normal behavior.
 
@@ -24,8 +24,16 @@ let input = FileHandle.standardInput.readDataToEndOfFile()
 switch arguments.first {
 case "permission":
     if let request = ClaudeHookTranslator.request(fromHookInput: input),
-       case .decision(let allow)? = ClaudeBridgeClient.ask(request, to: socketURL) {
-        FileHandle.standardOutput.write(ClaudeHookTranslator.hookOutput(allow: allow))
+       case .decision(let allow, let note)? = ClaudeBridgeClient.ask(request, to: socketURL) {
+        FileHandle.standardOutput.write(ClaudeHookTranslator.hookOutput(allow: allow, note: note))
+    }
+
+case "stop":
+    // Claude finished a reply: offer it in the notch and wait for a next instruction.
+    if let finished = ClaudeHookTranslator.finished(fromHookInput: input),
+       case .reply(let text)? = ClaudeBridgeClient.ask(finished, to: socketURL),
+       let output = ClaudeHookTranslator.stopOutput(reply: text) {
+        FileHandle.standardOutput.write(output)
     }
 
 case "statusline":

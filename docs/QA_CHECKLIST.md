@@ -415,11 +415,40 @@ project: use a throwaway folder (for example `mkdir /tmp/demo`). Write down each
 - [ ] If your plan has no usage figures, nothing breaks and the hint stays.
 
 ### Beside the notch
-- [ ] The wings show a request, and stay up until the Claude tab is on screen. A new request
-      after that brings them back.
-- [ ] With a request waiting, let a Pomodoro phase end (the notch opens on Pomodoro) or drag a
-      file to the notch (it opens on Shelf), then close it: the Claude wings are still there.
-- [ ] They win over the charging flash, meeting, and battery wings, but not a Pomodoro alert.
+- [ ] A request shows a black pill left of the notch: terminal icon, red count badge, and the
+      tool name. It slides out from under the notch.
+- [ ] With music playing, the music wings stay and the pill sits left of them.
+- [ ] The pill stays up until the Claude tab is on screen. A new request brings it back.
+- [ ] With a request waiting, let a Pomodoro phase end or drag a file to the notch, then close
+      it: the pill is still there.
+
+### Answer card
+- [ ] Hover the pill: a small card drops down under it with the request, a note field,
+      **Deny**, and **Allow**. Hovering the notch itself still opens the full panel.
+- [ ] Move the pointer off the card: it closes, and the pill is back.
+- [ ] **Allow** and **Deny** in the card work like the tab's buttons.
+- [ ] Click the note field and type: the letters appear there, not in the terminal. Press
+      **Return**: Claude says it was denied and quotes your note. Return with an empty field
+      does nothing.
+- [ ] After the card closes, click the terminal: typing goes to the terminal again.
+- [ ] With two requests, answering the first shows the second in the same card; answering the
+      last closes it.
+
+### Reply when Claude finishes
+- [ ] Settings → Claude Code: **Reply from the notch when Claude finishes** is off by default
+      and greyed out until connected.
+- [ ] Turn it on: `~/.claude/settings.json` gains one `Stop` hook running `easynotch-claude
+      stop`. Your own Stop hooks stay. Reconnect doesn't duplicate it; turning it off or
+      Disconnect removes only ours.
+- [ ] In a new session, when Claude finishes a reply, a green **✓ Done** pill appears.
+- [ ] Hover it: the card shows the project, the end of Claude's reply, a text box, **Done**,
+      and **Send**. **Send** is greyed out while the box is empty.
+- [ ] Type a next step and press **Send** (or Return): Claude keeps working on it.
+- [ ] Press **Done**: the session stops and the terminal is free right away.
+- [ ] Ignore the pill: after 30 seconds it disappears and the terminal is free.
+- [ ] Keep the card open past 30 seconds while typing: it stays until you answer or move off.
+- [ ] A permission request and a finished reply at once: the pill and card show the request
+      first.
 
 ### Keyboard and VoiceOver
 - [ ] Return/Escape do nothing; clicking Allow/Deny works; VoiceOver can reach and press both

@@ -18,7 +18,12 @@ nonisolated enum ClaudeBridgeError: Error, Equatable {
 nonisolated enum ClaudeBridgeMessage: Codable, Equatable, Sendable {
     case permissionRequest(tool: String, summary: String, project: String)
     case usage(fiveHour: UsageWindow?, sevenDay: UsageWindow?)
-    case decision(allow: Bool)
+    /// `note` is the user's typed reason for a deny; Claude Code shows it to Claude.
+    case decision(allow: Bool, note: String? = nil)
+    /// Claude finished a reply (the Stop hook). `message` is the end of its final message.
+    case finished(message: String, project: String)
+    /// The user's next instruction for a finished session; nil lets the session stop.
+    case reply(text: String?)
 
     static let maxLineBytes = 65_536
     static let maxSummaryBytes = 4_096

@@ -57,6 +57,16 @@ struct ClaudePane: View {
             }
 
             Section {
+                Toggle("Reply from the notch when Claude finishes", isOn: Binding(
+                    get: { claude.repliesOnFinish },
+                    set: setRepliesOnFinish
+                ))
+                .disabled(claude.setupStatus != .connected)
+            } footer: {
+                Text("When Claude finishes a reply, a Done pill appears beside the notch. Hover it to type what to do next. Claude Code waits up to 30 seconds for you (longer while the card is open), and its terminal is paused until you send, press Done, or the wait ends.")
+            }
+
+            Section {
                 Text("To show or hide the Claude tab in the notch, use the Modules pane.")
                     .foregroundStyle(.secondary)
             }
@@ -87,6 +97,15 @@ struct ClaudePane: View {
         case .disconnected: "Show Claude Code permission requests in the notch."
         case .connected: "Stop showing Claude Code requests in the notch."
         case .needsReconnect: "Point Claude Code at this copy of EasyNotch."
+        }
+    }
+
+    private func setRepliesOnFinish(_ on: Bool) {
+        do {
+            try claude.setRepliesOnFinish(on)
+            errorMessage = nil
+        } catch {
+            errorMessage = "Your Claude settings file couldn't be read, so EasyNotch left it unchanged."
         }
     }
 

@@ -16,7 +16,7 @@ struct ClaudeView: View {
                 notice("EasyNotch moved. Reconnect in Settings.", button: "Open Settings")
             case .connected:
                 if let request = claude.pending.first {
-                    RequestPanel(request: request, count: claude.pending.count, claude: claude)
+                    ClaudeRequestPanel(request: request, count: claude.pending.count)
                         .id(request.id)
                 } else {
                     Text("No requests waiting.")
@@ -46,57 +46,5 @@ struct ClaudeView: View {
             Text(text).font(.system(size: 12))
             Button(button, action: onShowSettings)
         }
-    }
-}
-
-/// One waiting request. Its own view so the "just became the front" guard state resets for
-/// each new request (the parent gives it `.id(request.id)`).
-private struct RequestPanel: View {
-    let request: ClaudeRequest
-    let count: Int
-    let claude: ClaudeService
-
-    /// Once true, the guard has passed and nothing needs to tick any more.
-    @State private var ready = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("\(request.project) · \(request.tool)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-                Spacer()
-                Text("1 of \(count)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(ClaudeUsageView.secondary)
-            }
-            Text(request.summary)
-                .font(.system(size: 12, design: .monospaced))
-                .lineLimit(3)
-                .help(request.summary)
-                .accessibilityLabel(request.summary)
-            // Answers are refused for a moment after a request becomes the front (see
-            // `ClaudeService.answerGuard`). Time isn't observable, so tick only until it passes.
-            if ready || claude.canAnswer(request.id) {
-                buttons(enabled: true)
-            } else {
-                TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-                    let ok = claude.canAnswer(request.id)
-                    buttons(enabled: ok)
-                        .onChange(of: ok, initial: true) { _, now in if now { ready = true } }
-                }
-            }
-        }
-    }
-
-    private func buttons(enabled: Bool) -> some View {
-        HStack {
-            Spacer()
-            // No keyboard shortcuts: the notch never takes keyboard focus (NotchPanel), and a
-            // stray Return must never approve anything. Click to answer.
-            Button("Deny") { claude.deny(request.id) }
-            Button("Allow") { claude.allow(request.id) }
-        }
-        .disabled(!enabled)
     }
 }

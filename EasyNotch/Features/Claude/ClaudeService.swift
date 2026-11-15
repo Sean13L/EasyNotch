@@ -21,6 +21,14 @@ struct ClaudeRequest: Identifiable, Equatable {
     let receivedAt: Date
 }
 
+/// A session where Claude just finished a reply and is waiting briefly for a next instruction.
+/// Its id is the connection's id.
+struct ClaudeFinished: Identifiable, Equatable {
+    let id: UUID
+    let message: String
+    let project: String
+}
+
 /// The latest rate-limit numbers from Claude Code. A window that was never reported stays nil.
 /// `Codable` so the last numbers survive a relaunch: Claude Code only sends them when its status
 /// line redraws, which can be a long time while a session sits idle.
@@ -40,6 +48,9 @@ final class ClaudeService {
     static let answerGuard: TimeInterval = 0.5
     /// More waiting requests than this are handed straight back to the terminal.
     static let maxPending = 32
+    /// How long a finished session waits for a reply before it's let go, so the terminal
+    /// isn't paused for long. The clock stops while the answer card is open.
+    static let finishedWait: Duration = .seconds(30)
 
     /// Requests waiting for an answer, oldest first.
     private(set) var pending: [ClaudeRequest] = []
@@ -47,8 +58,13 @@ final class ClaudeService {
         didSet { saveUsage() }
     }
     private(set) var setupStatus: ClaudeSetup.Status = .disconnected
-    /// True when there are waiting requests the user hasn't seen since the last new one.
-    var showsAlert: Bool { !pending.isEmpty && !alertAcknowledged }
+    /// The latest session that finished a reply, while it waits for a next instruction.
+    private(set) var finished: ClaudeFinished?
+    /// Whether our Stop hook is installed (Settings: "Reply from the notch when Claude finishes").
+    private(set) var repliesOnFinish = false
+    /// True when there are waiting requests the user hasn't seen since the last new one, or a
+    /// finished session waiting for a reply.
+    var showsAlert: Bool { (!pending.isEmpty && !alertAcknowledged) || finished != nil }
 
     private var alertAcknowledged = false
 
@@ -68,6 +84,7 @@ final class ClaudeService {
     @ObservationIgnored private let moduleName = NotchModule.claude.rawValue
     /// How many open notches are showing the Claude tab right now (one per screen at most).
     @ObservationIgnored private var tabShowingCount = 0
+    @ObservationIgnored private var finishedExpiry: Task<Void, Never>?
 
     /// `setup` is injectable so tests never touch the real `~/.claude`.
     init(
@@ -121,7 +138,34 @@ final class ClaudeService {
     }
 
     func allow(_ id: UUID) { answer(id, allow: true) }
-    func deny(_ id: UUID) { answer(id, allow: false) }
+    /// `note` reaches Claude as the reason, so it can try something else.
+    func deny(_ id: UUID, note: String? = nil) { answer(id, allow: false, note: note) }
+
+    /// Sends the user's next instruction to the finished session; Claude keeps going with it.
+    func sendReply(_ text: String) {
+        guard let finished, let connection = connections[finished.id] else { return }
+        connection.reply(.reply(text: text))
+        clearFinished()
+    }
+
+    /// Lets the finished session stop normally, giving the terminal back right away.
+    func dismissFinished() {
+        guard let finished else { return }
+        connections[finished.id]?.close()
+        clearFinished()
+    }
+
+    /// The answer card opened or closed: no letting go of the session while you're typing.
+    func finishedCardVisible(_ visible: Bool) {
+        finishedExpiry?.cancel()
+        if !visible, finished != nil { startFinishedExpiry() }
+    }
+
+    /// Adds or removes the Stop hook, keeping everything else as it is.
+    func setRepliesOnFinish(_ on: Bool) throws {
+        try makeSetup().connect(replyOnFinish: on)
+        refreshStatus()
+    }
 
     /// Adds our hook to Claude Code's settings and starts listening.
     func connect() throws {
@@ -186,7 +230,18 @@ final class ClaudeService {
         case .usage(let fiveHour, let sevenDay):
             usage = ClaudeUsage(fiveHour: fiveHour, sevenDay: sevenDay, updatedAt: now())
             connection.close()
-        case .decision:
+        case .finished(let message, let project):
+            guard server != nil, !connection.isClosed, !settings.hiddenModules.contains(moduleName), isNotchVisible()
+            else {
+                connection.close()
+                return
+            }
+            // One at a time: a newer finished session replaces the older one, which just stops.
+            dismissFinished()
+            connections[connection.id] = connection
+            finished = ClaudeFinished(id: connection.id, message: message, project: project)
+            startFinishedExpiry()
+        case .decision, .reply:
             connection.close()  // only the app sends these
         }
     }
@@ -194,15 +249,16 @@ final class ClaudeService {
     /// The helper hung up (Claude Code was stopped, or the user answered in the terminal).
     func connectionClosed(_ id: UUID) {
         connections[id] = nil
+        if finished?.id == id { clearFinished() }
         pending.removeAll { $0.id == id }
         updateFront()
     }
 
     // MARK: - Private
 
-    private func answer(_ id: UUID, allow: Bool) {
+    private func answer(_ id: UUID, allow: Bool, note: String? = nil) {
         guard canAnswer(id), let connection = connections[id] else { return }
-        connection.reply(.decision(allow: allow))
+        connection.reply(.decision(allow: allow, note: note))
         connections[id] = nil
         pending.removeAll { $0.id == id }
         updateFront()
@@ -221,6 +277,7 @@ final class ClaudeService {
         for connection in connections.values { connection.close() }
         connections.removeAll()
         pending.removeAll()
+        clearFinished()
         updateFront()
     }
 
@@ -238,7 +295,25 @@ final class ClaudeService {
     }
 
     private func refreshStatus() {
-        setupStatus = makeSetup().status()
+        let setup = makeSetup()
+        setupStatus = setup.status()
+        repliesOnFinish = setupStatus == .connected && setup.repliesOnFinish()
+    }
+
+    private func clearFinished() {
+        finishedExpiry?.cancel()
+        finishedExpiry = nil
+        if let id = finished?.id { connections[id] = nil }
+        finished = nil
+    }
+
+    private func startFinishedExpiry() {
+        finishedExpiry?.cancel()
+        finishedExpiry = Task { [weak self] in
+            try? await Task.sleep(for: Self.finishedWait)
+            guard !Task.isCancelled else { return }
+            self?.dismissFinished()
+        }
     }
 
     private func startServer() throws {

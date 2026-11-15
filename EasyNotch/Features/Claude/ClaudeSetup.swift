@@ -1,6 +1,6 @@
 import Foundation
 
-/// Adds EasyNotch's permission hook and status line to Claude Code's settings file, and
+/// Adds EasyNotch's permission hook, optional Stop hook, and status line to Claude Code's settings file, and
 /// removes exactly those again. It never touches anything else in the file.
 ///
 /// Our entries are recognised by a command containing `easynotch-claude`. The file is
@@ -15,6 +15,9 @@ struct ClaudeSetup {
     // Claude Code's docs name no maximum for a hook's `timeout` (the default is 10 minutes),
     // so 86400 s (24 h) stands in for "wait indefinitely".
     private static let hookTimeoutSeconds = 86400
+    /// The app gives up on a finished reply after 30 s (longer while its card is open); this
+    /// only stops a stuck helper from holding the session forever.
+    private static let stopHookTimeoutSeconds = 600
     private static let marker = "easynotch-claude"
 
     private var backupURL: URL { sibling("settings.json.easynotch-backup") }
@@ -81,11 +84,27 @@ struct ClaudeSetup {
 
     // MARK: Connect
 
-    func connect() throws {
+    /// Whether our Stop hook is installed: "Reply from the notch when Claude finishes".
+    func repliesOnFinish() -> Bool {
+        guard let root = try? load().root, let hooks = root["hooks"] as? [String: Any] else { return false }
+        return Self.hasOurHandler(hooks["Stop"])
+    }
+
+    /// `replyOnFinish` adds or removes our Stop hook; nil keeps whatever is there now.
+    func connect(replyOnFinish: Bool? = nil) throws {
         let (root, original) = try load()
         var root2 = root
         var hooks = try hooksDictionary(root2)
+        let addStop = replyOnFinish ?? Self.hasOurHandler(hooks["Stop"])
         stripOurHandlers(from: &hooks)
+        if addStop {
+            var stopGroups = hooks["Stop"] as? [Any] ?? []
+            stopGroups.append([
+                "hooks": [["type": "command", "command": "\(ShellQuote.quote(helperPath)) stop",
+                           "timeout": Self.stopHookTimeoutSeconds]],
+            ] as [String: Any])
+            hooks["Stop"] = stopGroups
+        }
 
         var groups = hooks["PermissionRequest"] as? [Any] ?? []
         let command = "\(ShellQuote.quote(helperPath)) permission"
@@ -173,6 +192,16 @@ struct ClaudeSetup {
         guard let value = root["hooks"] else { return [:] }
         guard let hooks = value as? [String: Any] else { throw SetupError.unreadableSettings }
         return hooks
+    }
+
+    private static func hasOurHandler(_ groups: Any?) -> Bool {
+        for case let group as [String: Any] in groups as? [Any] ?? [] {
+            for case let handler as [String: Any] in group["hooks"] as? [Any] ?? []
+            where (handler["command"] as? String)?.contains(marker) == true {
+                return true
+            }
+        }
+        return false
     }
 
     private func isOurs(_ statusLine: [String: Any]) -> Bool {

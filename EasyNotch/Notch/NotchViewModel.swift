@@ -27,6 +27,10 @@ final class NotchViewModel {
     /// True when the keyboard shortcut opened the notch. It then stays open while the pointer
     /// is elsewhere, until the pointer visits it and leaves, or you click outside it.
     private(set) var isHeldOpen = false
+    /// True when hovering the Claude pill opened the small answer card instead of the full notch.
+    private(set) var isShowingCard = false
+    /// Where the answer card is, while it shows. It hangs under the pill it was opened from.
+    private(set) var cardRect: CGRect = .zero
 
     /// The tab that was on screen when the notch last closed. Its live activity is preferred
     /// beside the closed notch (see `LiveActivity.resolve`).
@@ -35,6 +39,8 @@ final class NotchViewModel {
     /// Which live activity (if any) should show beside the closed notch, given the tab to
     /// prefer. Set by `AppServices`, so the notch never needs to know about individual features.
     @ObservationIgnored var liveActivityProvider: (NotchModule?) -> LiveActivity? = { _ in nil }
+    /// Whether a Claude Code request is waiting to be seen. Set by `AppServices`.
+    @ObservationIgnored var claudeAlertProvider: () -> Bool = { false }
     /// Called after every state change; the window controller uses it to toggle click-through.
     @ObservationIgnored var onStateChange: ((NotchState) -> Void)?
     /// Called whenever the notch opens (not for Settings previews), e.g. to mark alerts as seen.
@@ -47,6 +53,8 @@ final class NotchViewModel {
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private var pendingTransition: Task<Void, Never>?
     @ObservationIgnored private var pendingTarget: NotchState?
+    /// Whether the pending open is for the Claude card (the pointer is on the pill).
+    @ObservationIgnored private var pendingCard = false
 
     init(geometry: NotchGeometry, settings: AppSettings) {
         self.geometry = geometry
@@ -61,8 +69,15 @@ final class NotchViewModel {
 
     var liveActivity: LiveActivity? { liveActivityProvider(lastViewedModule) }
 
+    /// The Claude pill beside the closed notch (and its wings), or nil when nothing is waiting.
+    /// It sits apart from the notch, so music and the other live activities keep showing.
+    var claudePillRect: CGRect? {
+        guard state == .closed, preview == nil, claudeAlertProvider() else { return nil }
+        return geometry.claudePill(beside: liveActivity == nil ? geometry.notchRect : geometry.compactRect)
+    }
+
     var presentation: NotchPresentation {
-        if state == .open { return .open }
+        if state == .open { return isShowingCard ? .card : .open }
         if preview == .compact {
             // Show the wings even when nothing is playing, so their width can be judged.
             return .compact(liveActivity ?? .placeholder)
@@ -96,17 +111,21 @@ final class NotchViewModel {
         case .closed:
             // Mouse moves arrive constantly; skip the rest unless the pointer is near the notch.
             // (The compact hot zone always contains the plain one.)
-            guard !settings.openOnClick, geometry.compactHotZone.contains(point) else {
+            let onPill = isOnPill(point)
+            guard !settings.openOnClick, onPill || geometry.compactHotZone.contains(point) else {
                 cancelPendingTransition()
                 return
             }
-            if activeHotZone.contains(point) {
+            if onPill || activeHotZone.contains(point) {
+                // Moving between the pill and the notch restarts the countdown for the other one.
+                if pendingCard != onPill { cancelPendingTransition() }
+                pendingCard = onPill
                 schedule(.open, after: settings.hoverDelay)
             } else {
                 cancelPendingTransition()
             }
         case .open:
-            if geometry.openRect.contains(point) {
+            if openArea.contains(point) {
                 isHeldOpen = false  // the pointer arrived; normal rules from now on
                 cancelPendingTransition()
             } else if !isHeldOpen {
@@ -129,7 +148,7 @@ final class NotchViewModel {
             open(.fileDrag)
         case .open:
             // Be forgiving while carrying files, so the notch doesn't close just before a drop.
-            let keepOpen = carryingFiles ? geometry.openRect.union(geometry.dragHotZone) : geometry.openRect
+            let keepOpen = carryingFiles ? openArea.union(geometry.dragHotZone) : openArea
             if keepOpen.contains(point) {
                 cancelPendingTransition()
             } else if !isHeldOpen {
@@ -144,12 +163,15 @@ final class NotchViewModel {
         guard preview == nil else { return }
         switch state {
         case .closed:
-            if settings.openOnClick, activeHotZone.contains(point) {
+            if settings.openOnClick, isOnPill(point) {
+                cancelPendingTransition()
+                openCard()
+            } else if settings.openOnClick, activeHotZone.contains(point) {
                 cancelPendingTransition()
                 open(.pointer)
             }
         case .open:
-            if !geometry.openRect.contains(point) { close() }
+            if !openArea.contains(point) { close() }
         }
     }
 
@@ -161,7 +183,7 @@ final class NotchViewModel {
         case .closed:
             return activeHotZone.contains(point)
         case .open:
-            if !geometry.openRect.contains(point) { close() }
+            if !openArea.contains(point) { close() }
             return false
         }
     }
@@ -215,7 +237,24 @@ final class NotchViewModel {
         liveActivity == nil ? geometry.hotZone : geometry.compactHotZone
     }
 
+    /// The area the open notch covers: the card, or the full panel.
+    private var openArea: CGRect { isShowingCard ? cardRect : geometry.openRect }
+
+    private func isOnPill(_ point: CGPoint) -> Bool {
+        guard let pill = claudePillRect else { return false }
+        let margin = geometry.hotZoneMargin
+        return pill.insetBy(dx: -margin, dy: -margin).contains(point)
+    }
+
+    private func openCard() {
+        guard let pill = claudePillRect else { return }
+        cardRect = geometry.claudeCard(under: pill)
+        isShowingCard = true
+        setState(.open)
+    }
+
     private func open(_ reason: OpenReason) {
+        isShowingCard = false
         selectedModule = openingModule(for: reason)
         setState(.open)
     }
@@ -251,7 +290,11 @@ final class NotchViewModel {
     }
 
     private func transition(to target: NotchState) {
-        if target == .open { open(.pointer) } else { setState(.closed) }
+        if target == .open {
+            if pendingCard { openCard() } else { open(.pointer) }
+        } else {
+            setState(.closed)
+        }
     }
 
     private func cancelPendingTransition() {
@@ -267,7 +310,10 @@ final class NotchViewModel {
             lastViewedModule = currentModule
         }
         state = newState
-        if newState == .closed { isHeldOpen = false }
+        if newState == .closed {
+            isHeldOpen = false
+            isShowingCard = false
+        }
         Log.notch.debug("Notch \(String(describing: newState), privacy: .public)")
         if newState == .open, settings.hapticsEnabled, preview == nil {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)

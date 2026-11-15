@@ -32,13 +32,35 @@ nonisolated enum ClaudeHookTranslator {
     }
 
     /// The JSON Claude Code expects on stdout for a PermissionRequest hook.
-    static func hookOutput(allow: Bool) -> Data {
+    static func hookOutput(allow: Bool, note: String? = nil) -> Data {
         var decision: [String: Any] = ["behavior": allow ? "allow" : "deny"]
-        if !allow { decision["message"] = "Denied from EasyNotch." }
+        let note = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !allow { decision["message"] = note.isEmpty ? "Denied from EasyNotch." : String(note.prefix(2_000)) }
         let root: [String: Any] = [
             "hookSpecificOutput": ["hookEventName": "PermissionRequest", "decision": decision]
         ]
         return (try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])) ?? Data()
+    }
+
+    /// Reads a Stop hook's stdin. Keeps the end of Claude's last message (where its question
+    /// or summary usually is) and the project folder name.
+    static func finished(fromHookInput data: Data) -> ClaudeBridgeMessage? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let message = root["last_assistant_message"] as? String else { return nil }
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let tail = trimmed.count > 600 ? "…" + trimmed.suffix(600) : trimmed
+        let project = ((root["cwd"] as? String ?? "") as NSString).lastPathComponent
+        return .finished(message: cut(tail, toBytes: ClaudeBridgeMessage.maxSummaryBytes), project: project)
+    }
+
+    /// The JSON that makes Claude keep going with `reply` as its next instruction.
+    /// Nil for an empty reply, so the session stops normally.
+    static func stopOutput(reply: String?) -> Data? {
+        let text = reply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !text.isEmpty else { return nil }
+        let root: [String: Any] = ["decision": "block", "reason": String(text.prefix(4_000))]
+        return try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])
     }
 
     /// Reads the status line JSON. Nil when it has no `rate_limits` (e.g. API-key users).
