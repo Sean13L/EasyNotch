@@ -12,7 +12,15 @@ The owner is new to macOS development and to Claude Code. Explain non-obvious de
 sentence or two, and prefer simple, readable code over clever code.
 
 ## Status
-- **v1.2.2: published** at github.com/Sean13L/EasyNotch (2026-10-15), marked Latest.
+- **v1.3.0: published** at github.com/Sean13L/EasyNotch (2026-11-15), marked Latest.
+  - **Claude Code in the notch:** Connect (Settings → Claude Code) adds a permission hook and
+    status line to `~/.claude/settings.json`. Requests show in a pill left of the notch
+    (`ClaudePill`); hovering it opens an answer card with Allow, Deny, and a note to Claude.
+    Usage bars on the Claude tab. Helper: `EasyNotchHelper` → `easynotch-claude`.
+  - **Reply when Claude finishes** (off by default): a Stop hook shows a Done pill with a box
+    for the next instruction; the session is let go after 30 s.
+  - **Pomodoro:** on-screen alert and a repeating alarm that mutes other apps.
+- **v1.2.2: published** at github.com/Sean13L/EasyNotch (2026-10-15).
   - **Spatial Audio for Spotify** (off by default, Music settings): the relay plays Spotify
     through EasyNotch so AirPods can use Spatial Audio. It starts and stops with playback.
     Needs macOS 14.2 (`SpatialAudioRelay`, `SpatialAudioController`).
